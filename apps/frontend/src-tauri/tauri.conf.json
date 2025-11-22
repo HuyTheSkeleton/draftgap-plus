@@ -56,15 +56,8 @@
         },
         "security": {
             "csp": null
-        },
-        "updater": {
-            "active": true,
-            "endpoints": [
-                "https://gist.githubusercontent.com/vigovlugt/5d549f4fdd602eb22542ef55e7c881ec/raw"
-            ],
-            "dialog": false
-        },
-        "windows": [
+        }
+        ,"windows": [
             {
                 "fullscreen": false,
                 "height": 850,

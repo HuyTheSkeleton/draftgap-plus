@@ -28,9 +28,19 @@ import { Dialog } from "../common/Dialog";
 import { ChampionDraftAnalysisDialog } from "../dialogs/ChampionDraftAnalysisDialog";
 import { Team } from "@draftgap/core/src/models/Team";
 import { championName } from "../../utils/i18n";
+import { useDraftAnalysis } from "../../contexts/DraftAnalysisContext";
+import { ratingToWinrate } from "@draftgap/core/src/rating/ratings";
 
 export default function DraftTable() {
     const { dataset } = useDataset();
+    const { allyDraftAnalysis, opponentDraftAnalysis } = useDraftAnalysis();
+    
+    const currentTeamRating = () => {
+        const analysis = selection.team === "opponent" 
+            ? opponentDraftAnalysis() 
+            : allyDraftAnalysis();
+        return analysis?.totalRating ?? 0;
+    };
     const { selection, pickChampion, select, bans, ownedChampions } =
         useDraft();
     const {
@@ -304,6 +314,31 @@ export default function DraftTable() {
                   },
               ] as ColumnDef<Suggestion>[])
             : []),
+            {
+            header: "Delta",
+            accessorFn: (suggestion) => {
+                const baseWinrate = ratingToWinrate(currentTeamRating()) * 100;
+                const newWinrate = ratingToWinrate(suggestion.draftResult.totalRating) * 100;
+                return newWinrate - baseWinrate;
+            },
+            cell: (info) => {
+                const delta = info.getValue<number>();
+                const isPositive = delta > 0;
+                // Formatting: Green for positive, Red for negative
+                return (
+                    <div 
+                        class="flex justify-end font-bold text-base"
+                        classList={{
+                            "text-green-400": isPositive,
+                            "text-red-400": !isPositive,
+                            "text-neutral-500": delta === 0
+                        }}
+                    >
+                        {isPositive ? "+" : ""}{delta.toFixed(2)}%
+                    </div>
+                );
+            },
+        },
         {
             header: "Winrate",
             accessorFn: (suggestion) => suggestion.draftResult.totalRating,

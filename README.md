@@ -25,7 +25,7 @@ In the original app, champion suggestions showed the *total* resulting team winr
     * **Negative Delta (-):** Shown in **red**. This champion statistically hurts your team composition.
 
 ### 2. Smart Suggestion 🧠
-A new drafting mode inspired by Pro Play strategies (LCK/LPL) that automatically adjusts the suggestion algorithm based on the draft phase.
+A new drafting mode inspired by Pro Play that automatically adjusts the suggestion algorithm based on the draft phase.
 
 * **Phase 1 (First 2 Picks):** Prioritizes **"Power Picks"**. It accounts for raw champion winrates to help you secure the strongest meta champions early.
 * **Phase 2 (Remaining Picks):** Switches to **"Synergy/Counter"** mode. It ignores individual champion winrates to focus entirely on which champions complete your specific team composition and counter the enemy.

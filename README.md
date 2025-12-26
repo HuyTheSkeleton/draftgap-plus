@@ -13,9 +13,9 @@ Full credit belongs to the original creator for the core architecture and logic.
 
 ## 🆕 What's New in DraftGap+?
 
-The primary goal of this modification is to make winrate data easier to interpret at a glance.
+The primary goal of this modification is to reduce "mental math" and simulate high-level drafting strategies.
 
-### The "Delta" Column
+### 1. The "Delta" Column 📊
 In the original app, champion suggestions showed the *total* resulting team winrate. I found it difficult to quickly see how much a single champion actually impacted the team.
 
 **DraftGap+ introduces a specialized "Delta" column:**
@@ -23,7 +23,14 @@ In the original app, champion suggestions showed the *total* resulting team winr
 * **Visual Indicators:**
     * **Positive Delta (+):** Shown in **green**. This champion statistically improves your team's chances of winning.
     * **Negative Delta (-):** Shown in **red**. This champion statistically hurts your team composition.
-* **Why it helps:** It allows you to instantly identify high-impact picks without doing mental math during the stressful countdown of champ select.
+
+### 2. Smart Suggestion 🧠
+A new drafting mode inspired by Pro Play strategies (LCK/LPL) that automatically adjusts the suggestion algorithm based on the draft phase.
+
+* **Phase 1 (First 2 Picks):** Prioritizes **"Power Picks"**. It accounts for raw champion winrates to help you secure the strongest meta champions early.
+* **Phase 2 (Remaining Picks):** Switches to **"Synergy/Counter"** mode. It ignores individual champion winrates to focus entirely on which champions complete your specific team composition and counter the enemy.
+
+*You can toggle this feature On/Off in the Settings menu.*
 
 ---
 

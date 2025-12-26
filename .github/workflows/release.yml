@@ -5,7 +5,7 @@ permissions:
 on:
   push:
     tags:
-      - 'v*' # Triggers when you push a tag like v1.1.0
+      - 'v*' 
 
 jobs:
   build-windows:
@@ -26,12 +26,9 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
-      # FIX: Install at the ROOT so it links the core package correctly
       - name: Install Dependencies
         run: pnpm install --no-frozen-lockfile
 
-      - name: Build Core
-        run: pnpm build --filter @draftgap/core
 
       - name: Build App
         run: |
@@ -42,7 +39,6 @@ jobs:
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          # This looks for the MSI in the standard Tauri output folder
           files: apps/frontend/src-tauri/target/release/bundle/msi/*.msi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

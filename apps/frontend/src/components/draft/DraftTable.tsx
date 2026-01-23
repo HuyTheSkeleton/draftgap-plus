@@ -59,7 +59,6 @@ export default function DraftTable() {
             : allySuggestions();
 
     const ownsChampion = (championKey: string) =>
-        // If we don't have owned champions, we are not logged in, so we own all champions.
         ownedChampions().size === 0 || ownedChampions().has(championKey);
 
     const filteredSuggestions = () => {
@@ -98,17 +97,12 @@ export default function DraftTable() {
         }
 
         if (config.showFavouritesAtTop) {
-            // Sort is normally in place, but then tanstack table does not see the update.
             filtered = [...filtered].sort((a, b) => {
                 const aFav = isFavourite(a.championKey, a.role);
                 const bFav = isFavourite(b.championKey, b.role);
-                if (aFav && !bFav) {
-                    return -1;
-                } else if (!aFav && bFav) {
-                    return 1;
-                } else {
-                    return 0;
-                }
+                if (aFav && !bFav) return -1;
+                else if (!aFav && bFav) return 1;
+                else return 0;
             });
         }
 
@@ -118,13 +112,9 @@ export default function DraftTable() {
             filtered = [...filtered].sort((a, b) => {
                 const aBanned = bans.includes(a.championKey);
                 const bBanned = bans.includes(b.championKey);
-                if (aBanned && !bBanned) {
-                    return 1;
-                } else if (!aBanned && bBanned) {
-                    return -1;
-                } else {
-                    return 0;
-                }
+                if (aBanned && !bBanned) return 1;
+                else if (!aBanned && bBanned) return -1;
+                else return 0;
             });
         }
 
@@ -134,13 +124,9 @@ export default function DraftTable() {
             filtered = [...filtered].sort((a, b) => {
                 const aUnowned = !ownsChampion(a.championKey);
                 const bUnowned = !ownsChampion(b.championKey);
-                if (aUnowned && !bUnowned) {
-                    return 1;
-                } else if (!aUnowned && bUnowned) {
-                    return -1;
-                } else {
-                    return 0;
-                }
+                if (aUnowned && !bUnowned) return 1;
+                else if (!aUnowned && bUnowned) return -1;
+                else return 0;
             });
         }
 
@@ -238,7 +224,6 @@ export default function DraftTable() {
                     </Show>
                 </div>
             ),
-
             meta: {
                 headerClass: "w-1",
                 onClickCell: (
@@ -267,12 +252,25 @@ export default function DraftTable() {
             },
             sortDescFirst: false,
         },
+        // --- THIS IS THE UPDATED COLUMN ---
         {
             header: "Champion",
             accessorFn: (suggestion) => suggestion.championKey,
-            cell: (info) => (
-                <ChampionCell championKey={info.getValue<string>()} />
-            ),
+            cell: (info) => {
+                // Cast to any to access the custom 'tier' property
+                const suggestion = info.row.original as any;
+                return (
+                    <div class="flex items-center gap-2">
+                        <ChampionCell championKey={info.getValue<string>()} />
+                        <Show when={suggestion.tier}>
+                            {/* Changed text-xs to text-lg (larger) and added italic for style */}
+                            <span class={`font-black text-3xl italic ml-1 ${suggestion.tierColor}`}>
+                            {suggestion.tier}
+    </span>
+</Show>
+                    </div>
+                );
+            },
             sortingFn: (a, b, id) =>
                 dataset()!.championData[
                     a.getValue<string>(id)
@@ -280,6 +278,7 @@ export default function DraftTable() {
                     dataset()!.championData[b.getValue<string>(id)].name
                 ),
         },
+        // ----------------------------------
         ...(config.showAdvancedWinrates
             ? ([
                   {
@@ -324,7 +323,6 @@ export default function DraftTable() {
             cell: (info) => {
                 const delta = info.getValue<number>();
                 const isPositive = delta > 0;
-                // Formatting: Green for positive, Red for negative
                 return (
                     <div 
                         class="flex justify-end font-bold text-base"

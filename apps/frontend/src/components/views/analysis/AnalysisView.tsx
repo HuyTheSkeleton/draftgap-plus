@@ -1,4 +1,6 @@
-import { createSignal, Show } from "solid-js";
+import { createSignal, Show, createEffect } from "solid-js";
+import { ratingToWinrate } from "@draftgap/core/src/rating/ratings";
+import { appWindow } from "@tauri-apps/api/window";
 import { ButtonGroup } from "../../common/ButtonGroup";
 import { DuoResultTable } from "./DuoResultTable";
 import { IndividualChampionsResultTable } from "./IndividualChampionsResultTable";
@@ -10,12 +12,56 @@ import { Team } from "@draftgap/core/src/models/Team";
 import { useUser } from "../../../contexts/UserContext";
 import { useDraftAnalysis } from "../../../contexts/DraftAnalysisContext";
 import { ScalingChart } from "./ScalingChart";
+import { Role } from "@draftgap/core/src/models/Role";
 tooltip;
 
 export default function AnalysisView() {
     const { config } = useUser();
-    const { setAnalysisPick } = useDraftAnalysis();
+    const { setAnalysisPick, allyDraftAnalysis } = useDraftAnalysis(); // Updated this line!
     const [showAllMatchups, setShowAllMatchups] = createSignal(false);
+
+ // --- ACTIONS & ANALYSIS LOGIC ---
+    const getDodgeStatus = () => {
+        const analysis = allyDraftAnalysis();
+        if (!analysis) return { state: "none", message: "" };
+
+        const totalWinrate = ratingToWinrate(analysis.totalRating) * 100;
+        const matchupResults = analysis.matchupRating?.matchupResults || [];
+
+        // 0 = Top, 2 = Mid
+        const topMatchup = matchupResults.find(m => m.roleA === 0 && m.roleB === 0);
+        const midMatchup = matchupResults.find(m => m.roleA === 2 && m.roleB === 2);
+        
+        const topWr = topMatchup ? ratingToWinrate(topMatchup.rating) * 100 : 50;
+        const midWr = midMatchup ? ratingToWinrate(midMatchup.rating) * 100 : 50;
+
+        const isTopLosing = topMatchup !== undefined && topWr < 47;
+        const isMidLosing = midMatchup !== undefined && midWr < 47;
+
+        // Hard Dodge (Red)
+        if (totalWinrate <= 42 || (isTopLosing && isMidLosing)) {
+            const msg = totalWinrate <= 42 
+                ? `DODGE: Critical winrate (${totalWinrate.toFixed(1)}%)`
+                : `DODGE: Solo lanes countered (${topWr.toFixed(1)}% / ${midWr.toFixed(1)}%)`;
+            return { state: "dodge", message: msg };
+        }
+
+        // Soft Warning (Cyan-Green)
+        if (isTopLosing || isMidLosing || (totalWinrate < 50)) {
+            return { state: "warning", message: "Difficult but winnable. Play to your win conditions." };
+        }
+
+        return { state: "none", message: "" };
+    };
+
+    createEffect(() => {
+        const status = getDodgeStatus();
+        if (status.state === "dodge") {
+            appWindow?.requestUserAttention(1).catch(() => {});
+        } else {
+            appWindow?.requestUserAttention(null).catch(() => {});
+        }
+    });
 
     const openChampionDraftAnalysisModal = (
         team: Team,
@@ -28,6 +74,20 @@ export default function AnalysisView() {
         <div>
             <DraftSummaryCards team="ally" />
             <DraftSummaryCards team="opponent" class="mb-12 mt-6" />
+
+            {/* --- DODGE WARNING BANNER UI --- */}
+            <Show when={getDodgeStatus().state !== "none"}>
+                <div 
+                    class="p-5 mb-6 mx-4 rounded-lg font-black text-center border-4 transition-all duration-300 uppercase italic shadow-lg"
+                    classList={{
+                        "bg-red-900/40 border-red-400 text-red-300 text-2xl drop-shadow-[0_0_12px_rgba(239,68,68,0.6)]": getDodgeStatus().state === "dodge",
+                        "bg-[#a7dbe9]/10 border-[#8bc28b] text-[#8bc28b] text-2xl": getDodgeStatus().state === "warning",
+                    }}
+                >
+                    {getDodgeStatus().message}
+                </div>
+            </Show>
+            {/* ------------------------------- */}
 
             <div
                 class="flex-col md:flex-row flex gap-4 mb-8 overflow-hidden"

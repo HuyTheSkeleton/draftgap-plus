@@ -252,7 +252,6 @@ export default function DraftTable() {
             },
             sortDescFirst: false,
         },
-        // --- THIS IS THE UPDATED COLUMN ---
         {
             header: "Champion",
             accessorFn: (suggestion) => suggestion.championKey,

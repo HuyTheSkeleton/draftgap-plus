@@ -14,7 +14,13 @@ import { ScalingChart } from "./ScalingChart";
 import { Role } from "@draftgap/core/src/models/Role";
 import { useExtraDraftAnalysis } from "../../../contexts/ExtraDraftAnalysisContext";
 import { useDataset } from "../../../contexts/DatasetContext";
-
+declare module "solid-js" {
+    namespace JSX {
+        interface Directives {
+            tooltip: any;
+        }
+    }
+}
 tooltip;
 
 export default function AnalysisView() {

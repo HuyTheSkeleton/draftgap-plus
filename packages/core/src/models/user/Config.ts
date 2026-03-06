@@ -1,6 +1,6 @@
 import { RiskLevel } from "../../risk/risk-level";
 
-export type StatsSite = "op.gg" | "u.gg" | "lolalytics";
+export type StatsSite = "op.gg" | "u.gg" | "lolalytics" | "coachless";
 
 export const DraftTablePlacement = {
     Bottom: "bottom",

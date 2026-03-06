@@ -61,6 +61,10 @@ export default function SettingsDialog() {
             value: "op.gg",
             label: "op.gg",
         },
+        {
+            value: "coachless",
+            label: "coachless",
+        },
     ] as const;
 
     return (

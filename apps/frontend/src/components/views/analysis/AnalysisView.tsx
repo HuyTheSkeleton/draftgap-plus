@@ -1,6 +1,5 @@
 import { createSignal, Show, createEffect } from "solid-js";
 import { ratingToWinrate } from "@draftgap/core/src/rating/ratings";
-import { appWindow } from "@tauri-apps/api/window";
 import { ButtonGroup } from "../../common/ButtonGroup";
 import { DuoResultTable } from "./DuoResultTable";
 import { IndividualChampionsResultTable } from "./IndividualChampionsResultTable";
@@ -13,14 +12,26 @@ import { useUser } from "../../../contexts/UserContext";
 import { useDraftAnalysis } from "../../../contexts/DraftAnalysisContext";
 import { ScalingChart } from "./ScalingChart";
 import { Role } from "@draftgap/core/src/models/Role";
+import { useExtraDraftAnalysis } from "../../../contexts/ExtraDraftAnalysisContext";
+import { useDataset } from "../../../contexts/DatasetContext";
+
 tooltip;
 
 export default function AnalysisView() {
     const { config } = useUser();
-    const { setAnalysisPick, allyDraftAnalysis } = useDraftAnalysis(); // Updated this line!
+    const { dataset } = useDataset();
+    const { 
+        setAnalysisPick, 
+        allyDraftAnalysis, 
+        opponentDraftAnalysis,
+        allyDamageDistribution,
+        opponentDamageDistribution,
+        allyTeamComp,
+        opponentTeamComp
+    } = useDraftAnalysis();
+    const { allyDraftExtraAnalysis, opponentDraftExtraAnalysis } = useExtraDraftAnalysis();
     const [showAllMatchups, setShowAllMatchups] = createSignal(false);
 
- // --- ACTIONS & ANALYSIS LOGIC ---
     const getDodgeStatus = () => {
         const analysis = allyDraftAnalysis();
         if (!analysis) return { state: "none", message: "" };
@@ -28,7 +39,6 @@ export default function AnalysisView() {
         const totalWinrate = ratingToWinrate(analysis.totalRating) * 100;
         const matchupResults = analysis.matchupRating?.matchupResults || [];
 
-        // 0 = Top, 2 = Mid
         const topMatchup = matchupResults.find(m => m.roleA === 0 && m.roleB === 0);
         const midMatchup = matchupResults.find(m => m.roleA === 2 && m.roleB === 2);
         
@@ -38,15 +48,13 @@ export default function AnalysisView() {
         const isTopLosing = topMatchup !== undefined && topWr < 47;
         const isMidLosing = midMatchup !== undefined && midWr < 47;
 
-        // Hard Dodge (Red)
         if (totalWinrate <= 42 || (isTopLosing && isMidLosing)) {
             const msg = totalWinrate <= 42 
-                ? `DODGE: Critical winrate (${totalWinrate.toFixed(1)}%)`
-                : `DODGE: Solo lanes countered (${topWr.toFixed(1)}% / ${midWr.toFixed(1)}%)`;
+                ? `DODGE: Critical winrate (${totalWinrate.toFixed(2)}%)`
+                : `DODGE: Solo lanes countered (${topWr.toFixed(2)}% / ${midWr.toFixed(2)}%)`;
             return { state: "dodge", message: msg };
         }
 
-        // Soft Warning (Cyan-Green)
         if (isTopLosing || isMidLosing || (totalWinrate < 50)) {
             return { state: "warning", message: "Difficult but winnable. Play to your win conditions." };
         }
@@ -54,14 +62,146 @@ export default function AnalysisView() {
         return { state: "none", message: "" };
     };
 
-    createEffect(() => {
-        const status = getDodgeStatus();
-        if (status.state === "dodge") {
-            appWindow?.requestUserAttention(1).catch(() => {});
-        } else {
-            appWindow?.requestUserAttention(null).catch(() => {});
-        }
-    });
+    // --- INSIGHT LOGIC ---
+    const getInsights = () => {
+        const insights: { message: string; type: "advantage" | "neutral" | "disadvantage" }[] = [];
+        
+        const allyDmg = allyDamageDistribution();
+        const oppDmg = opponentDamageDistribution();
+
+        const checkDamage = (dmgProfile: any, isAlly: boolean) => {
+            if (!dmgProfile) return;
+
+            const totalDamage = dmgProfile.physical + dmgProfile.magic + dmgProfile.true;
+            if (totalDamage === 0) return; 
+
+            const adRatio = dmgProfile.physical / totalDamage;
+            const apRatio = dmgProfile.magic / totalDamage;
+
+            if (adRatio >= 0.60) {
+                insights.push({
+                    message: `${isAlly ? "Ally" : "Enemy"} team is heavily Physical (${(adRatio * 100).toFixed(0)}%)`,
+                    type: isAlly ? "disadvantage" : "advantage"
+                });
+            } else if (apRatio >= 0.60) {
+                insights.push({
+                    message: `${isAlly ? "Ally" : "Enemy"} team is heavily Magic (${(apRatio * 100).toFixed(0)}%)`,
+                    type: isAlly ? "disadvantage" : "advantage"
+                });
+            }
+        };
+
+        const checkScaling = (scalingData: any, isAlly: boolean) => {
+            if (!scalingData || scalingData.length < 5) return;
+
+            const earlyWr = ratingToWinrate(scalingData[0].totalRating) * 100;
+            const lateWr = ratingToWinrate(scalingData[4].totalRating) * 100;
+            const diff = lateWr - earlyWr;
+
+            if (diff <= -8) {
+                insights.push({
+                    message: `${isAlly ? "Ally" : "Enemy"} team is an Early Game comp`,
+                    type: "neutral" 
+                });
+            } else if (diff >= 8) {
+                insights.push({
+                    message: `${isAlly ? "Ally" : "Enemy"} team is a Late Game comp`,
+                    type: "neutral"
+                });
+            }
+        };
+
+        const checkBotSynergy = (analysis: any, isAlly: boolean) => {
+            if (!analysis?.allyDuoRating?.duoResults) return;
+
+            const botSuppDuo = analysis.allyDuoRating.duoResults.find(
+                (d: any) => (d.roleA === 3 && d.roleB === 4) || (d.roleA === 4 && d.roleB === 3)
+            );
+
+            if (botSuppDuo) {
+                const synergyWr = ratingToWinrate(botSuppDuo.rating) * 100;
+                
+                if (synergyWr >= 51) {
+                    insights.push({
+                        message: `${isAlly ? "Ally" : "Enemy"} Bot Lane has strong synergy (${synergyWr.toFixed(1)}%)`,
+                        type: isAlly ? "advantage" : "disadvantage"
+                    });
+                } else if (synergyWr <= 49) {
+                    insights.push({
+                        message: `${isAlly ? "Ally" : "Enemy"} Bot Lane lacks synergy (${synergyWr.toFixed(1)}%)`,
+                        type: isAlly ? "disadvantage" : "advantage"
+                    });
+                }
+            }
+        };
+
+        // --- NEW MATCHUP LOGIC ---
+        const checkSoloMatchups = () => {
+            const analysis = allyDraftAnalysis();
+            const ds = dataset();
+            if (!analysis?.matchupRating?.matchupResults || !ds) return;
+            
+            const allyComp = allyTeamComp();
+            const oppComp = opponentTeamComp();
+            
+            const checkLane = (roleId: number) => {
+                const matchup = analysis.matchupRating.matchupResults.find(
+                    (m: any) => m.roleA === roleId && m.roleB === roleId
+                );
+                
+                if (!matchup) return;
+                
+                // Bulletproof way to find the champion keys regardless of Map key types
+                let allyKey, oppKey;
+                for (const [r, key] of allyComp.entries()) {
+                    if (Number(r) === roleId) allyKey = key;
+                }
+                for (const [r, key] of oppComp.entries()) {
+                    if (Number(r) === roleId) oppKey = key;
+                }
+                
+                if (allyKey && oppKey) {
+                    const allyName = ds.championData[allyKey]?.name;
+                    const oppName = ds.championData[oppKey]?.name;
+                    
+                    if (!allyName || !oppName) return;
+
+                    const wr = ratingToWinrate(matchup.rating) * 100;
+
+                    // 2% threshold from 50%
+                    if (wr >= 51) {
+                        insights.push({
+                            message: `${allyName} holds a ${wr.toFixed(2)}% winrate against ${oppName}`,
+                            type: "advantage"
+                        });
+                    } else if (wr <= 49) {
+                        insights.push({
+                            message: `${allyName} holds a ${wr.toFixed(2)}% winrate against ${oppName}`,
+                            type: "disadvantage"
+                        });
+                    }
+                }
+            };
+
+            checkLane(0); // Top
+            checkLane(2); // Mid
+        };
+
+        checkDamage(allyDmg, true);
+        checkDamage(oppDmg, false);
+        checkScaling(allyDraftExtraAnalysis()?.ratingByTime, true);
+        checkScaling(opponentDraftExtraAnalysis()?.ratingByTime, false);
+        checkBotSynergy(allyDraftAnalysis(), true);
+        checkBotSynergy(opponentDraftAnalysis(), false);
+        
+        // Check the new solo lane matchups
+        checkSoloMatchups();
+
+        const typeOrder = { advantage: 1, neutral: 2, disadvantage: 3 };
+        insights.sort((a, b) => typeOrder[a.type] - typeOrder[b.type]);
+
+        return insights;
+    };
 
     const openChampionDraftAnalysisModal = (
         team: Team,
@@ -72,22 +212,61 @@ export default function AnalysisView() {
 
     return (
         <div>
-            <DraftSummaryCards team="ally" />
-            <DraftSummaryCards team="opponent" class="mb-12 mt-6" />
-
-            {/* --- DODGE WARNING BANNER UI --- */}
             <Show when={getDodgeStatus().state !== "none"}>
                 <div 
-                    class="p-5 mb-6 mx-4 rounded-lg font-black text-center border-4 transition-all duration-300 uppercase italic shadow-lg"
+                    class="p-5 mx-4 mt-6 mb-4 rounded-lg font-black text-center border-4 transition-all duration-300 uppercase italic shadow-lg"
                     classList={{
-                        "bg-red-900/40 border-red-400 text-red-300 text-2xl drop-shadow-[0_0_12px_rgba(239,68,68,0.6)]": getDodgeStatus().state === "dodge",
-                        "bg-[#a7dbe9]/10 border-[#8bc28b] text-[#8bc28b] text-2xl": getDodgeStatus().state === "warning",
+                        "bg-red-900/40 border-red-400 text-red-300 text-3xl drop-shadow-[0_0_12px_rgba(239,68,68,0.6)]": getDodgeStatus().state === "dodge",
+                        "bg-[#a7dbe9]/10 border-[#8bc28b] text-[#8bc28b] text-3xl": getDodgeStatus().state === "warning",
                     }}
                 >
                     {getDodgeStatus().message}
                 </div>
             </Show>
-            {/* ------------------------------- */}
+
+            {/* --- INSIGHTS SECTION --- */}
+            <Show when={getInsights().length > 0}>
+                <div class="mb-8" id="insights">
+                    <h3 
+                        class="text-3xl uppercase ml-4 mb-4 w-fit"
+                        use:tooltip={{
+                            content: (
+                                <>
+                                    Quick, actionable takeaways based on the draft's composition.
+                                    <br />
+                                    <br />
+                                    <strong>DAMAGE:</strong> Flags if a team is heavily skewed toward Physical or Magic damage.
+                                    <br />
+                                    <strong>SCALING:</strong> Identifies comps that heavily spike in the early game or outscale late.
+                                    <br />
+                                    <strong>SYNERGY:</strong> Highlights particularly strong or weak bot lane (ADC + Support) pairings.
+                                    <br />
+                                    <strong>MATCHUPS:</strong> Flags highly favored or heavily countered Top and Mid lane matchups.
+                                </>
+                            ),
+                        }}
+                    >
+                        Insights
+                    </h3>
+                    <div class="flex flex-col gap-3 mx-4">
+                        {getInsights().map((insight) => (
+                            <div 
+                                class="p-4 rounded-md font-black text-xl bg-[#191919] uppercase italic"
+                                classList={{
+                                    "text-[#8bc28b] border-l-4 border-[#8bc28b]": insight.type === "advantage",
+                                    "text-neutral-400 border-l-4 border-neutral-500": insight.type === "neutral",
+                                    "text-red-400 border-l-4 border-red-500": insight.type === "disadvantage",
+                                }}
+                            >
+                                {insight.message}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </Show>
+
+            <DraftSummaryCards team="ally" />
+            <DraftSummaryCards team="opponent" class="mb-12 mt-6" />
 
             <div
                 class="flex-col md:flex-row flex gap-4 mb-8 overflow-hidden"
@@ -96,7 +275,6 @@ export default function AnalysisView() {
                 <div class="md:w-1/2">
                     <h3
                         class="text-3xl mb-1 uppercase ml-4"
-                        // @ts-ignore
                         use:tooltip={{
                             content: (
                                 <>
@@ -130,7 +308,6 @@ export default function AnalysisView() {
                 <div class="md:w-1/2">
                     <h3
                         class="text-3xl mb-1 uppercase ml-4"
-                        // @ts-ignore
                         use:tooltip={{
                             content: (
                                 <>
@@ -171,7 +348,6 @@ export default function AnalysisView() {
                     <div class="sm:w-1/2">
                         <h3
                             class="text-3xl uppercase mb-1 ml-4"
-                            // @ts-ignore
                             use:tooltip={{
                                 content: (
                                     <>Base winrates of individual champions</>
@@ -193,7 +369,6 @@ export default function AnalysisView() {
                     <div class="sm:w-1/2">
                         <h3
                             class="text-3xl uppercase mb-1 ml-4"
-                            // @ts-ignore
                             use:tooltip={{
                                 content: (
                                     <>Base winrates of individual champions</>
@@ -222,7 +397,6 @@ export default function AnalysisView() {
                 <div>
                     <h3
                         class="text-3xl uppercase ml-4"
-                        // @ts-ignore
                         use:tooltip={{
                             content: (
                                 <>
@@ -236,7 +410,6 @@ export default function AnalysisView() {
                     </h3>
                     <p
                         class="text-neutral-500 uppercase ml-4"
-                        // @ts-ignore
                         use:tooltip={{
                             content: (
                                 <>
@@ -273,7 +446,6 @@ export default function AnalysisView() {
                 <div class="md:w-1/2">
                     <h3
                         class="text-3xl uppercase ml-4"
-                        // @ts-ignore
                         use:tooltip={{
                             content: (
                                 <>Winrates of all duos in the ally draft</>
@@ -284,7 +456,6 @@ export default function AnalysisView() {
                     </h3>
                     <p
                         class="text-neutral-500 uppercase ml-4 mb-2"
-                        // @ts-ignore
                         use:tooltip={{
                             content: (
                                 <>
@@ -307,7 +478,6 @@ export default function AnalysisView() {
                 <div class="md:w-1/2">
                     <h3
                         class="text-3xl uppercase ml-4"
-                        // @ts-ignore
                         use:tooltip={{
                             content: (
                                 <>Winrates of all duos in the opponent draft</>
@@ -318,7 +488,6 @@ export default function AnalysisView() {
                     </h3>
                     <p
                         class="text-neutral-500 uppercase ml-4 mb-2"
-                        // @ts-ignore
                         use:tooltip={{
                             content: (
                                 <>
@@ -340,21 +509,10 @@ export default function AnalysisView() {
                 </div>
             </div>
 
-            {/* <div class="mb-2 mt-16 flex justify-center items-center gap-2">
-                <div class="h-[3px] bg-neutral-700 w-24" />
-
-                <h2 class="text-4xl uppercase text-neutral-500 text-center">
-                    Misc
-                </h2>
-
-                <div class="h-[3px] bg-neutral-700 w-24" />
-            </div> */}
-
             <div>
                 <h3 class="text-3xl uppercase ml-4">Scaling</h3>
                 <span
                     class="text-neutral-500 uppercase ml-4 mb-2"
-                    // @ts-ignore
                     use:tooltip={{
                         content: (
                             <>
@@ -368,7 +526,7 @@ export default function AnalysisView() {
                     Team winrate normalized
                 </span>
                 <div class="p-4 rounded-md bg-[#191919] w-1/2 max-w-2xl h-64">
-                    <ScalingChart />
+                    <ScalingChart />    
                 </div>
             </div>
         </div>

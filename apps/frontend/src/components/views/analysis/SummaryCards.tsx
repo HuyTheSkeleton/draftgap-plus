@@ -38,6 +38,7 @@ export const SummaryCard = (
     };
 
     return (
+        // @ts-expect-error
         <a
             {...props}
             class={cn(

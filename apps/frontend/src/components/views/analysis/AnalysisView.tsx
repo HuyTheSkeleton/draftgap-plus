@@ -106,12 +106,12 @@ export default function AnalysisView() {
 
             if (diff <= -8) {
                 insights.push({
-                    message: `${isAlly ? "Ally" : "Enemy"} team is an Early Game comp`,
+                    message: `${isAlly ? "Ally" : "Enemy"} team falls off late game`,
                     type: "neutral" 
                 });
             } else if (diff >= 8) {
                 insights.push({
-                    message: `${isAlly ? "Ally" : "Enemy"} team is a Late Game comp`,
+                    message: `${isAlly ? "Ally" : "Enemy"} team scales well late game`,
                     type: "neutral"
                 });
             }
@@ -254,19 +254,33 @@ export default function AnalysisView() {
                     >
                         Insights
                     </h3>
-                    <div class="flex flex-col gap-3 mx-4">
-                        {getInsights().map((insight) => (
-                            <div 
-                                class="p-4 rounded-md font-black text-xl bg-[#191919] uppercase italic"
-                                classList={{
-                                    "text-[#8bc28b] border-l-4 border-[#8bc28b]": insight.type === "advantage",
-                                    "text-neutral-400 border-l-4 border-neutral-500": insight.type === "neutral",
-                                    "text-red-400 border-l-4 border-red-500": insight.type === "disadvantage",
-                                }}
-                            >
-                                {insight.message}
-                            </div>
-                        ))}
+                    <div class="flex flex-col md:flex-row gap-4 mx-4">
+                        <div class="md:w-1/2 flex flex-col gap-3">
+                            {getInsights()
+                                .filter(i => i.type === "advantage" || i.type === "neutral")
+                                .map((insight) => (
+                                    <div 
+                                        class="p-4 rounded-md font-black text-xl bg-[#191919] uppercase italic"
+                                        classList={{
+                                            "text-[#8bc28b] border-l-4 border-[#8bc28b]": insight.type === "advantage",
+                                            "text-neutral-400 border-l-4 border-neutral-500": insight.type === "neutral",
+                                        }}
+                                    >
+                                        {insight.message}
+                                    </div>
+                                ))}
+                        </div>
+                        <div class="md:w-1/2 flex flex-col gap-3">
+                            {getInsights()
+                                .filter(i => i.type === "disadvantage")
+                                .map((insight) => (
+                                    <div 
+                                        class="p-4 rounded-md font-black text-xl bg-[#191919] uppercase italic text-red-400 border-l-4 border-red-500"
+                                    >
+                                        {insight.message}
+                                    </div>
+                                ))}
+                        </div>
                     </div>
                 </div>
             </Show>

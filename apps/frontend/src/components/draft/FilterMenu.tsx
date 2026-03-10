@@ -10,7 +10,7 @@ export function FilterMenu() {
     const { config, setConfig } = useUser();
 
     const minGameCountOptions: ButtonGroupOption<number>[] = [
-        500, 1000, 2500, 5000,
+        1000, 2500, 5000, 7500,
     ].map((n) => ({
         value: n,
         label: n.toString(),

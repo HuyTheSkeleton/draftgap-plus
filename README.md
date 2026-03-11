@@ -13,8 +13,6 @@ Full credit belongs to the original creator for the core architecture and logic.
 
 ## 🆕 What's New in DraftGap+?
 
-DraftGap+ introduces two major features to make drafting faster and smarter: **Delta Analysis** and **Dynamic Smart Tiers**.
-
 ### 1. Dynamic Smart Tiers
 Most drafting tools use "static" tier lists (e.g., "Jinx is always S tier this patch"). DraftGap+ is different. **It calculates a custom tier list for every single lobby** based on your specific allies and enemies.
 
@@ -31,6 +29,16 @@ In the original app, suggestions showed the *total* resulting winrate. It was ha
     * **Negative Delta (-):** Shown in **red**.
 * **Why it helps:** Instantly spot the difference between a "good pick" and a "winning pick" without doing mental math.
 
+### 3. Hover Insight
+When you hover over a suggested champion, the UI shows a tooltip with matchup breakdowns, synergy score, and delta components, letting you understand *why* a recommendation was made without leaving the draft screen.
+
+### 4. Analysis Tab Insight
+The Analysis tab provides quick, aggregated context about each champion in the lobby. Rather than live matchup math, it shows general popularity and strength indicators:
+
+* **Popularity:** how frequently a champion is picked in the dataset (useful for understanding meta relevance).
+* **General power level:** a simple strong/weak rating derived from overall winrates.
+* **Who counters who:** if the champion is statistically weak or strong against your current picks.
+
 ## 🛡️ Core Features (Inherited from DraftGap)
 
 DraftGap+ keeps all the excellent features that make the original tool great:
@@ -46,6 +54,26 @@ DraftGap+ keeps all the excellent features that make the original tool great:
 2.  Download the latest **.msi** installer.
 3.  Run the installer (Windows may ask for permission as this is a custom build).
 4.  Open the app and start your League of Legends client.
+
+## 📜 Changelog
+* **v3.0.4** – 2026‑03‑10  
+  - repushed fix for insights-on-hover after regression  
+  - added hover‑insights tooltip  
+  - analysis tab now shows popularity/power counters  
+
+* **v3.0.3** – 2026‑03‑10  
+  - fixed bug in hover‑insights calculation  
+
+* **v3.0.2** – 2026‑03‑10  
+  - resolved TypeScript compilation error in UI components  
+
+* **v3.0.1** – 2026‑03‑09  
+  - initial rollout of hover insights feature  
+  - updated package versions and default settings  
+
+* **v2.5.2** – 2026‑03‑10  
+  - split insights view into two panels  
+  - added 7.5k game filter option  
 
 ---
 

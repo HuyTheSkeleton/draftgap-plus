@@ -17,7 +17,7 @@ tooltip;
 import { Table } from "../common/Table";
 import ChampionCell from "../common/ChampionCell";
 import { RoleCell } from "../common/RoleCell";
-import { batch, createSignal, onCleanup, onMount, Show } from "solid-js";
+import { batch, createSignal, onCleanup, onMount, Show, JSX } from "solid-js";
 import { Icon } from "solid-heroicons";
 import { star } from "solid-heroicons/solid";
 import { star as starOutline } from "solid-heroicons/outline";

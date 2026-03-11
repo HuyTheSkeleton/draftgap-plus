@@ -501,6 +501,7 @@ export default function DraftTable() {
                         if (strengthPercent >= 51) strengthPhrase = "Strong overall";
                         else if (strengthPercent <= 49) strengthPhrase = "Weak overall";
 
+                        // gather all duo results involving this champion; we'll slice after filtering
                         const synergies = suggestion.draftResult.allyDuoRating.duoResults
                             .filter(
                                 (d) =>
@@ -514,20 +515,19 @@ export default function DraftTable() {
                                         : d.championKeyA;
                                 return { key: other, rating: d.rating };
                             })
-                            .sort((a, b) => b.rating - a.rating)
-                            .slice(0, 3);
+                            // highest ratings first; negatives will be at the end
+                            .sort((a, b) => b.rating - a.rating);
 
                         const counters = suggestion.draftResult.matchupRating.matchupResults
                             .filter((m) => m.championKeyA === suggestion.championKey)
                             .map((m) => ({ key: m.championKeyB, rating: m.rating }))
-                            .sort((a, b) => b.rating - a.rating)
-                            .slice(0, 3);
+                            .sort((a, b) => b.rating - a.rating);
 
                         const synergyAvg =
                             synergies.reduce((sum, s) => sum + s.rating, 0) /
                             (synergies.length || 1);
                         const PCT_THRESHOLD = 1;
-                        const strongSynergies = synergies
+                        let strongSynergies = synergies
                             .filter((s) => {
                                 const pct = ratingToWinrate(s.rating) * 100 - 50;
                                 return pct >= PCT_THRESHOLD;
@@ -541,7 +541,9 @@ export default function DraftTable() {
                                     </span>
                                 );
                             });
-                        const weakSynergies = synergies
+                        // cap to top 3 positives
+                        if (strongSynergies.length > 3) strongSynergies = strongSynergies.slice(0, 3);
+                        let weakSynergies = synergies
                             .filter((s) => {
                                 const pct = ratingToWinrate(s.rating) * 100 - 50;
                                 return pct <= -PCT_THRESHOLD;
@@ -555,6 +557,8 @@ export default function DraftTable() {
                                     </span>
                                 );
                             });
+                        // cap to three worst synergies if there are many
+                        if (weakSynergies.length > 3) weakSynergies = weakSynergies.slice(0, 3);
 
                         const counterAvg =
                             counters.reduce((sum, c) => sum + c.rating, 0) /
@@ -564,7 +568,7 @@ export default function DraftTable() {
                         const counterPercent = null as null;
 
                         // split counters into strong/weak by percent threshold
-                        const strongCounters = counters
+                        let strongCounters = counters
                             .filter((c) => {
                                 const pct = ratingToWinrate(c.rating) * 100 - 50;
                                 return pct >= PCT_THRESHOLD;
@@ -578,7 +582,8 @@ export default function DraftTable() {
                                     </span>
                                 );
                             });
-                        const weakCounters = counters
+                        if (strongCounters.length > 3) strongCounters = strongCounters.slice(0, 3);
+                        let weakCounters = counters
                             .filter((c) => {
                                 const pct = ratingToWinrate(c.rating) * 100 - 50;
                                 return pct <= -PCT_THRESHOLD;
@@ -592,6 +597,7 @@ export default function DraftTable() {
                                     </span>
                                 );
                             });
+                        if (weakCounters.length > 3) weakCounters = weakCounters.slice(0, 3);
 
                         const positive: JSX.Element[] = [];
                         const negative: JSX.Element[] = [];

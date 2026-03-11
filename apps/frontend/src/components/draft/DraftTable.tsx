@@ -501,7 +501,6 @@ export default function DraftTable() {
                         if (strengthPercent >= 51) strengthPhrase = "Strong overall";
                         else if (strengthPercent <= 49) strengthPhrase = "Weak overall";
 
-                        // gather all duo results involving this champion; we'll slice after filtering
                         const synergies = suggestion.draftResult.allyDuoRating.duoResults
                             .filter(
                                 (d) =>
@@ -515,7 +514,6 @@ export default function DraftTable() {
                                         : d.championKeyA;
                                 return { key: other, rating: d.rating };
                             })
-                            // highest ratings first; negatives will be at the end
                             .sort((a, b) => b.rating - a.rating);
 
                         const counters = suggestion.draftResult.matchupRating.matchupResults
@@ -541,7 +539,6 @@ export default function DraftTable() {
                                     </span>
                                 );
                             });
-                        // cap to top 3 positives
                         if (strongSynergies.length > 3) strongSynergies = strongSynergies.slice(0, 3);
                         let weakSynergies = synergies
                             .filter((s) => {
@@ -557,7 +554,6 @@ export default function DraftTable() {
                                     </span>
                                 );
                             });
-                        // cap to three worst synergies if there are many
                         if (weakSynergies.length > 3) weakSynergies = weakSynergies.slice(0, 3);
 
                         const counterAvg =

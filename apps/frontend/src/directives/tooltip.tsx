@@ -3,7 +3,7 @@ import { Accessor, JSX, onCleanup, onMount } from "solid-js";
 import { useTooltip } from "../contexts/TooltipContext";
 
 type HelpPopoverParams = {
-    content: JSX.Element;
+    content: JSX.Element | null;
     placement?: Placement;
     delay?: number;
 };
@@ -23,12 +23,13 @@ export function tooltip(
 
     const onHover = (e: MouseEvent) => {
         const { content, placement, delay } = accessor();
-        const target = e.target as HTMLElement;
-
+        if (content == null) {
+            return;
+        }
         timeout = setTimeout(() => {
             setPopoverContent(content);
             setPopoverPlacement(placement ?? "top");
-            setPopoverTarget(target);
+            setPopoverTarget(el);
             setPopoverVisible(true);
         }, delay ?? 300);
     };

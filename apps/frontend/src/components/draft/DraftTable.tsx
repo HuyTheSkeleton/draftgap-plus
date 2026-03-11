@@ -10,6 +10,10 @@ import {
 import { useDraft } from "../../contexts/DraftContext";
 import { Role } from "@draftgap/core/src/models/Role";
 import { Suggestion } from "@draftgap/core/src/draft/suggestions";
+import { getStats } from "@draftgap/core/src/draft/utils";
+import { tooltip } from "../../directives/tooltip";
+
+tooltip;
 import { Table } from "../common/Table";
 import ChampionCell from "../common/ChampionCell";
 import { RoleCell } from "../common/RoleCell";
@@ -468,6 +472,204 @@ export default function DraftTable() {
                         ? "opacity-30"
                         : ""
                 }
+                rowRef={(r, el) => {
+                    if ((el as any)._tooltipInitialized) return;
+                    (el as any)._tooltipInitialized = true;
+
+                    tooltip(el, () => {
+                        const suggestion = r.original;
+                        const ds = dataset();
+                        if (!ds) {
+                            return { content: null };
+                        }
+
+                        const stats = getStats(
+                            ds,
+                            suggestion.championKey,
+                            suggestion.role
+                        );
+                        const games = stats.games;
+                        const popularityPhrase = "Popular pick";
+
+                        const champRes =
+                            suggestion.draftResult.allyChampionRating.championResults.find(
+                                (c) => c.championKey === suggestion.championKey
+                            );
+                        const strengthRating = champRes ? champRes.rating : 0;
+                        const strengthPercent = ratingToWinrate(strengthRating) * 100;
+                        let strengthPhrase = "Average overall";
+                        if (strengthPercent >= 51) strengthPhrase = "Strong overall";
+                        else if (strengthPercent <= 49) strengthPhrase = "Weak overall";
+
+                        const synergies = suggestion.draftResult.allyDuoRating.duoResults
+                            .filter(
+                                (d) =>
+                                    d.championKeyA === suggestion.championKey ||
+                                    d.championKeyB === suggestion.championKey
+                            )
+                            .map((d) => {
+                                const other =
+                                    d.championKeyA === suggestion.championKey
+                                        ? d.championKeyB
+                                        : d.championKeyA;
+                                return { key: other, rating: d.rating };
+                            })
+                            .sort((a, b) => b.rating - a.rating)
+                            .slice(0, 3);
+
+                        const counters = suggestion.draftResult.matchupRating.matchupResults
+                            .filter((m) => m.championKeyA === suggestion.championKey)
+                            .map((m) => ({ key: m.championKeyB, rating: m.rating }))
+                            .sort((a, b) => b.rating - a.rating)
+                            .slice(0, 3);
+
+                        const synergyAvg =
+                            synergies.reduce((sum, s) => sum + s.rating, 0) /
+                            (synergies.length || 1);
+                        const PCT_THRESHOLD = 1;
+                        const strongSynergies = synergies
+                            .filter((s) => {
+                                const pct = ratingToWinrate(s.rating) * 100 - 50;
+                                return pct >= PCT_THRESHOLD;
+                            })
+                            .map((s) => {
+                                const name = championName(ds.championData[s.key], config);
+                                const pct = (ratingToWinrate(s.rating) * 100 - 50).toFixed(1);
+                                return (
+                                    <span class="text-green-400 mr-1">
+                                        {name} (+{pct}%)
+                                    </span>
+                                );
+                            });
+                        const weakSynergies = synergies
+                            .filter((s) => {
+                                const pct = ratingToWinrate(s.rating) * 100 - 50;
+                                return pct <= -PCT_THRESHOLD;
+                            })
+                            .map((s) => {
+                                const name = championName(ds.championData[s.key], config);
+                                const pct = (ratingToWinrate(s.rating) * 100 - 50).toFixed(1);
+                                return (
+                                    <span class="text-red-400 mr-1">
+                                        {name} ({pct}%)
+                                    </span>
+                                );
+                            });
+
+                        const counterAvg =
+                            counters.reduce((sum, c) => sum + c.rating, 0) /
+                            (counters.length || 1);
+                        const counterPhrase =
+                            counterAvg >= 0 ? "Strong against" : "Weak against";
+                        const counterPercent = null as null;
+
+                        // split counters into strong/weak by percent threshold
+                        const strongCounters = counters
+                            .filter((c) => {
+                                const pct = ratingToWinrate(c.rating) * 100 - 50;
+                                return pct >= PCT_THRESHOLD;
+                            })
+                            .map((c) => {
+                                const name = championName(ds.championData[c.key], config);
+                                const pct = (ratingToWinrate(c.rating) * 100 - 50).toFixed(1);
+                                return (
+                                    <span class="text-green-400 mr-1">
+                                        {name} (+{pct}%)
+                                    </span>
+                                );
+                            });
+                        const weakCounters = counters
+                            .filter((c) => {
+                                const pct = ratingToWinrate(c.rating) * 100 - 50;
+                                return pct <= -PCT_THRESHOLD;
+                            })
+                            .map((c) => {
+                                const name = championName(ds.championData[c.key], config);
+                                const pct = (ratingToWinrate(c.rating) * 100 - 50).toFixed(1);
+                                return (
+                                    <span class="text-red-400 mr-1">
+                                        {name} ({pct}%)
+                                    </span>
+                                );
+                            });
+
+                        const positive: JSX.Element[] = [];
+                        const negative: JSX.Element[] = [];
+
+                        if (!config.ignoreChampionWinrates) {
+                            const el = (
+                                <div
+                                    class={
+                                        (strengthPercent >= 50
+                                            ? "text-green-400"
+                                            : "text-red-400") + " text-base"
+                                    }
+                                >
+                                    • {strengthPhrase} ({strengthPercent.toFixed(1)}%)
+                                </div>
+                            );
+                            if (strengthPercent >= 50) positive.push(el);
+                            else negative.push(el);
+                        }
+
+                        // popularity thresholds: >75k positive, <10k negative
+                        if (games >= 75000) {
+                            positive.push(
+                                <div class="text-green-400 text-base">
+                                    • Popular pick ({games.toLocaleString()} games)
+                                </div>
+                            );
+                        } else if (games <= 10000) {
+                            negative.push(
+                                <div class="text-red-400 text-base">
+                                    • Unpopular pick ({games.toLocaleString()} games)
+                                </div>
+                            );
+                        }
+
+                        if (strongSynergies.length > 0) {
+                            positive.push(
+                                <div class="text-green-400 text-base">
+                                    • Strong with {strongSynergies}
+                                </div>
+                            );
+                        }
+                        if (weakSynergies.length > 0) {
+                            negative.push(
+                                <div class="text-red-400 text-base">
+                                    • Weak with {weakSynergies}
+                                </div>
+                            );
+                        }
+
+                        if (strongCounters.length > 0) {
+                            positive.push(
+                                <div class="text-green-400 text-base">
+                                    • {counterPhrase} {strongCounters}
+                                </div>
+                            );
+                        }
+                        if (weakCounters.length > 0) {
+                            negative.push(
+                                <div class="text-red-400 text-base">
+                                    • Weak against {weakCounters}
+                                </div>
+                            );
+                        }
+
+                        const content = (
+                            <div class="text-left space-y-1 text-sm">
+                                {positive}
+                                {negative}
+                            </div>
+                        );
+
+                        if (positive.length + negative.length === 0) {
+                            return { content: null };
+                        }
+                        return { content };
+                    });
+                }}
                 id="draft-table"
             />
             <Dialog

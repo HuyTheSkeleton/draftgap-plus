@@ -15,17 +15,17 @@ const DEFAULT_CONFIG: DraftGapConfig = {
     // DRAFT CONFIG
     ignoreChampionWinrates: false,
     riskLevel: "medium",
-    minGames: 1000,
+    minGames: 7500,
 
     // UI
     showFavouritesAtTop: false,
     banPlacement: "bottom",
     unownedPlacement: "bottom",
-    showAdvancedWinrates: false,
+    showAdvancedWinrates: true,
     language: "en_US",
 
     // MISC
-    defaultStatsSite: "lolalytics",
+    defaultStatsSite: "coachless",
     enableBetaFeatures: false,
 
     // LOL CLIENT

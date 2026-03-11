@@ -7,6 +7,8 @@ interface Props<T> {
     table: TanstackTable<T>;
     onClickRow?: (row: Row<T>) => void;
     rowClassName?: (row: Row<T>) => string;
+    rowRef?: (row: Row<T>, el: HTMLTableRowElement) => void;
+    rowProps?: (row: Row<T>) => JSX.HTMLAttributes<HTMLTableRowElement>;
 }
 
 export function Table<T>(props: Props<T> & JSX.HTMLAttributes<HTMLDivElement>) {
@@ -122,6 +124,12 @@ export function Table<T>(props: Props<T> & JSX.HTMLAttributes<HTMLDivElement>) {
                     >
                         {(row) => (
                             <tr
+                                ref={(el) => {
+                                    if (el) {
+                                        props.rowRef?.(row, el);
+                                    }
+                                }}
+                                {...(props.rowProps?.(row) ?? {})}
                                 class="transition duration-200 ease-out group/row"
                                 classList={{
                                     "hover:bg-neutral-800": Boolean(

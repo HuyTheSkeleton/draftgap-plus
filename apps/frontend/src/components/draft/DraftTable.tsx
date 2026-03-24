@@ -539,23 +539,22 @@ export default function DraftTable() {
                                     </span>
                                 );
                             });
-                        if (strongSynergies.length > 3) strongSynergies = strongSynergies.slice(0, 3);
                         let weakSynergies = synergies
                             .filter((s) => {
-                                const pct = ratingToWinrate(s.rating) * 100 - 50;
-                                return pct <= -PCT_THRESHOLD;
-                            })
-                            .map((s) => {
-                                const name = championName(ds.championData[s.key], config);
-                                const pct = (ratingToWinrate(s.rating) * 100 - 50).toFixed(1);
+                        const pct = ratingToWinrate(s.rating) * 100 - 50;
+                                   return pct <= -PCT_THRESHOLD;
+                             })
+                             .sort((a, b) => a.rating - b.rating) // Đảo ngược sort: phế nhất lên đầu
+                             .slice(0, 3)                         // Lấy 3 cặp tệ nhất
+                              .map((s) => {
+                        const name = championName(ds.championData[s.key], config);
+                         const pct = (ratingToWinrate(s.rating) * 100 - 50).toFixed(1);
                                 return (
-                                    <span class="text-red-400 mr-1">
-                                        {name} ({pct}%)
-                                    </span>
-                                );
-                            });
-                        if (weakSynergies.length > 3) weakSynergies = weakSynergies.slice(0, 3);
-
+            <span class="text-red-400 mr-1">
+                {name} ({pct}%)
+            </span>
+        );
+    });
                         const counterAvg =
                             counters.reduce((sum, c) => sum + c.rating, 0) /
                             (counters.length || 1);
@@ -578,23 +577,22 @@ export default function DraftTable() {
                                     </span>
                                 );
                             });
-                        if (strongCounters.length > 3) strongCounters = strongCounters.slice(0, 3);
                         let weakCounters = counters
                             .filter((c) => {
-                                const pct = ratingToWinrate(c.rating) * 100 - 50;
-                                return pct <= -PCT_THRESHOLD;
-                            })
+                         const pct = ratingToWinrate(c.rating) * 100 - 50;
+                                 return pct <= -PCT_THRESHOLD;
+                                 })
+                            .sort((a, b) => a.rating - b.rating)
+                            .slice(0, 3)
                             .map((c) => {
-                                const name = championName(ds.championData[c.key], config);
-                                const pct = (ratingToWinrate(c.rating) * 100 - 50).toFixed(1);
-                                return (
-                                    <span class="text-red-400 mr-1">
-                                        {name} ({pct}%)
-                                    </span>
-                                );
-                            });
-                        if (weakCounters.length > 3) weakCounters = weakCounters.slice(0, 3);
-
+        const name = championName(ds.championData[c.key], config);
+        const pct = (ratingToWinrate(c.rating) * 100 - 50).toFixed(1);
+        return (
+            <span class="text-red-400 mr-1">
+                {name} ({pct}%)
+            </span>
+        );
+    });
                         const positive: JSX.Element[] = [];
                         const negative: JSX.Element[] = [];
 

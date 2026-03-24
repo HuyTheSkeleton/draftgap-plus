@@ -56,6 +56,10 @@ DraftGap+ keeps all the excellent features that make the original tool great:
 4.  Open the app and start your League of Legends client.
 
 ## 📜 Changelog
+* **v3.1.0** – 2026-03-25
+  - fixed sorting logic in hover insights to correctly prioritize and display the top 3 hardest counters
+  - resolved an issue where the weakest synergies and counters were showing the least impactful negative matchups instead of the most severe ones
+  
 * **v3.0.4** – 2026‑03‑10  
   - repushed fix for insights-on-hover after regression  
   - added hover‑insights tooltip  
@@ -70,11 +74,6 @@ DraftGap+ keeps all the excellent features that make the original tool great:
 * **v3.0.1** – 2026‑03‑09  
   - initial rollout of hover insights feature  
   - updated package versions and default settings  
-
-* **v2.5.2** – 2026‑03‑10  
-  - split insights view into two panels  
-  - added 7.5k game filter option  
-
 ---
 
 *DraftGap+ isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone officially involved in producing or managing League of Legends. League of Legends and Riot Games are trademarks or registered trademarks of Riot Games, Inc. League of Legends © Riot Games, Inc.*

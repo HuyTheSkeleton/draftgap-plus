@@ -56,6 +56,10 @@ DraftGap+ keeps all the excellent features that make the original tool great:
 4.  Open the app and start your League of Legends client.
 
 ## 📜 Changelog
+* **v3.2.0** – 2026-03-25
+  - replaced text-based champion names with direct image icons in the hover insights tooltip for a cleaner visual experience
+  - integrated champion icons into the Analysis tab's solo matchup insights to improve visual clarity
+
 * **v3.1.1** – 2026-03-25
   - fixed a text rendering bug in hover insights where strong champion counters were incorrectly labeled as "Weak against"
   
@@ -71,9 +75,6 @@ DraftGap+ keeps all the excellent features that make the original tool great:
 * **v3.0.3** – 2026‑03‑10  
   - fixed bug in hover‑insights calculation  
 
-* **v3.0.2** – 2026‑03‑10  
-  - resolved TypeScript compilation error in UI components
- 
 ---
 
 *DraftGap+ isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone officially involved in producing or managing League of Legends. League of Legends and Riot Games are trademarks or registered trademarks of Riot Games, Inc. League of Legends © Riot Games, Inc.*

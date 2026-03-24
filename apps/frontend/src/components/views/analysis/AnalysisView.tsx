@@ -1,4 +1,4 @@
-import { createSignal, Show, createEffect } from "solid-js";
+import { createSignal, Show, createEffect, JSX } from "solid-js";
 import { ratingToWinrate } from "@draftgap/core/src/rating/ratings";
 import { ButtonGroup } from "../../common/ButtonGroup";
 import { DuoResultTable } from "./DuoResultTable";
@@ -70,7 +70,7 @@ export default function AnalysisView() {
 
     // --- INSIGHT LOGIC ---
     const getInsights = () => {
-        const insights: { message: string; type: "advantage" | "neutral" | "disadvantage" }[] = [];
+        const insights: { message: string | JSX.Element; type: "advantage" | "neutral" | "disadvantage" }[] = [];
         
         const allyDmg = allyDamageDistribution();
         const oppDmg = opponentDamageDistribution();
@@ -157,7 +157,6 @@ export default function AnalysisView() {
                 
                 if (!matchup) return;
                 
-                // Bulletproof way to find the champion keys regardless of Map key types
                 let allyKey, oppKey;
                 for (const [r, key] of allyComp.entries()) {
                     if (Number(r) === roleId) allyKey = key;
@@ -174,23 +173,40 @@ export default function AnalysisView() {
 
                     const wr = ratingToWinrate(matchup.rating) * 100;
 
-                    // 2% threshold from 50%
+                    const message = (
+                        <span class="inline-flex items-center align-middle">
+                            <img 
+                                src={`https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/champion-icons/${allyKey}.png`} 
+                                class="w-10 h-10 rounded-none border border-neutral-700 object-cover mr-2"
+                                title={allyName}
+                                alt={allyName}
+                            />
+                            holds a {wr.toFixed(2)}% winrate against 
+                            <img 
+                                src={`https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/champion-icons/${oppKey}.png`} 
+                                class="w-10 h-10 rounded-none border border-neutral-700 object-cover ml-2"
+                                title={oppName}
+                                alt={oppName}
+                            />
+                        </span>
+                    );
+
                     if (wr >= 51) {
                         insights.push({
-                            message: `${allyName} holds a ${wr.toFixed(2)}% winrate against ${oppName}`,
+                            message: message,
                             type: "advantage"
                         });
                     } else if (wr <= 49) {
                         insights.push({
-                            message: `${allyName} holds a ${wr.toFixed(2)}% winrate against ${oppName}`,
+                            message: message,
                             type: "disadvantage"
                         });
                     }
                 }
             };
 
-            checkLane(0); // Top
-            checkLane(2); // Mid
+            checkLane(0); 
+            checkLane(2); 
         };
 
         checkDamage(allyDmg, true);

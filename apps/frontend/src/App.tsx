@@ -207,7 +207,7 @@ const App: Component = () => {
             </Dialog>
             <header class="bg-primary px-1 py-0 border-b-2 border-neutral-700 flex justify-between">
                 <h1 class="text-4xl sm:text-5xl mr-2 ml-1 mt-1 mb-[0.4rem] font-semibold tracking-wide">
-                    DRAFTGAP+ <span class="text-lg text-neutral-500 font-normal">v3.1.1</span>
+                    DRAFTGAP+ <span class="text-lg text-neutral-500 font-normal">v3.2.0</span>
                 </h1>
                 <div class="flex items-center gap-4">
                     <div class="text-xs text-neutral-400 hidden md:flex flex-col text-right uppercase">

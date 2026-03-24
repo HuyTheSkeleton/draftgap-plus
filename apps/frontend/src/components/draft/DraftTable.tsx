@@ -17,7 +17,7 @@ tooltip;
 import { Table } from "../common/Table";
 import ChampionCell from "../common/ChampionCell";
 import { RoleCell } from "../common/RoleCell";
-import { batch, createSignal, onCleanup, onMount, Show, JSX } from "solid-js";
+import { batch, createSignal, onCleanup, onMount, Show, JSX, getOwner, runWithOwner } from "solid-js";
 import { Icon } from "solid-heroicons";
 import { star } from "solid-heroicons/solid";
 import { star as starOutline } from "solid-heroicons/outline";
@@ -36,6 +36,7 @@ import { useDraftAnalysis } from "../../contexts/DraftAnalysisContext";
 import { ratingToWinrate } from "@draftgap/core/src/rating/ratings";
 
 export default function DraftTable() {
+    const owner = getOwner();
     const { dataset } = useDataset();
     const { allyDraftAnalysis, opponentDraftAnalysis } = useDraftAnalysis();
     
@@ -477,6 +478,7 @@ export default function DraftTable() {
                     (el as any)._tooltipInitialized = true;
 
                     tooltip(el, () => {
+                        return runWithOwner(owner, () => {
                         const suggestion = r.original;
                         const ds = dataset();
                         if (!ds) {
@@ -530,62 +532,82 @@ export default function DraftTable() {
                                 const pct = ratingToWinrate(s.rating) * 100 - 50;
                                 return pct >= PCT_THRESHOLD;
                             })
+                            .slice(0, 3)
                             .map((s) => {
-                                const name = championName(ds.championData[s.key], config);
                                 const pct = (ratingToWinrate(s.rating) * 100 - 50).toFixed(1);
                                 return (
-                                    <span class="text-green-400 mr-1">
-                                        {name} (+{pct}%)
+                                    <span class="inline-flex items-center gap-1 text-green-400 mr-2 align-middle mt-1">
+                                        <img 
+                                            src={`https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/champion-icons/${s.key}.png`} 
+                                            class="w-7 h-7 rounded-none border border-neutral-700 object-cover inline-block"
+                                            alt=""
+                                        />
+                                        <span>(+{pct}%)</span>
                                     </span>
                                 );
                             });
+
                         let weakSynergies = synergies
                             .filter((s) => {
-                        const pct = ratingToWinrate(s.rating) * 100 - 50;
-                                   return pct <= -PCT_THRESHOLD;
-                             })
-                             .sort((a, b) => a.rating - b.rating) // Đảo ngược sort: phế nhất lên đầu
-                             .slice(0, 3)                         // Lấy 3 cặp tệ nhất
-                              .map((s) => {
-                        const name = championName(ds.championData[s.key], config);
-                         const pct = (ratingToWinrate(s.rating) * 100 - 50).toFixed(1);
+                                const pct = ratingToWinrate(s.rating) * 100 - 50;
+                                return pct <= -PCT_THRESHOLD;
+                            })
+                            .sort((a, b) => a.rating - b.rating)
+                            .slice(0, 3)
+                            .map((s) => {
+                                const pct = (ratingToWinrate(s.rating) * 100 - 50).toFixed(1);
                                 return (
-            <span class="text-red-400 mr-1">
-                {name} ({pct}%)
-            </span>
-        );
-    });
-                        // split counters into strong/weak by percent threshold
+                                    <span class="inline-flex items-center gap-1 text-red-400 mr-2 align-middle mt-1">
+                                        <img 
+                                            src={`https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/champion-icons/${s.key}.png`} 
+                                            class="w-7 h-7 rounded-none border border-neutral-700 object-cover inline-block"
+                                            alt=""
+                                        />
+                                        <span>({pct}%)</span>
+                                    </span>
+                                );
+                            });
+
                         let strongCounters = counters
                             .filter((c) => {
                                 const pct = ratingToWinrate(c.rating) * 100 - 50;
                                 return pct >= PCT_THRESHOLD;
                             })
+                            .slice(0, 3)
                             .map((c) => {
-                                const name = championName(ds.championData[c.key], config);
                                 const pct = (ratingToWinrate(c.rating) * 100 - 50).toFixed(1);
                                 return (
-                                    <span class="text-green-400 mr-1">
-                                        {name} (+{pct}%)
+                                    <span class="inline-flex items-center gap-1 text-green-400 mr-2 align-middle mt-1">
+                                        <img 
+                                            src={`https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/champion-icons/${c.key}.png`} 
+                                            class="w-7 h-7 rounded-none border border-neutral-700 object-cover inline-block"
+                                            alt=""
+                                        />
+                                        <span>(+{pct}%)</span>
                                     </span>
                                 );
                             });
+
                         let weakCounters = counters
                             .filter((c) => {
-                         const pct = ratingToWinrate(c.rating) * 100 - 50;
-                                 return pct <= -PCT_THRESHOLD;
-                                 })
+                                const pct = ratingToWinrate(c.rating) * 100 - 50;
+                                return pct <= -PCT_THRESHOLD;
+                            })
                             .sort((a, b) => a.rating - b.rating)
                             .slice(0, 3)
                             .map((c) => {
-        const name = championName(ds.championData[c.key], config);
-        const pct = (ratingToWinrate(c.rating) * 100 - 50).toFixed(1);
-        return (
-            <span class="text-red-400 mr-1">
-                {name} ({pct}%)
-            </span>
-        );
-    });
+                                const pct = (ratingToWinrate(c.rating) * 100 - 50).toFixed(1);
+                                return (
+                                    <span class="inline-flex items-center gap-1 text-red-400 mr-2 align-middle mt-1">
+                                        <img 
+                                            src={`https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/champion-icons/${c.key}.png`} 
+                                            class="w-7 h-7 rounded-none border border-neutral-700 object-cover inline-block"
+                                            alt=""
+                                        />
+                                        <span>({pct}%)</span>
+                                    </span>
+                                );
+                            });
                         const positive: JSX.Element[] = [];
                         const negative: JSX.Element[] = [];
 
@@ -661,6 +683,7 @@ export default function DraftTable() {
                             return { content: null };
                         }
                         return { content };
+                        }) || { content: null };
                     });
                 }}
                 id="draft-table"

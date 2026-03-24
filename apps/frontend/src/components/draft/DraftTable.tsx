@@ -555,13 +555,6 @@ export default function DraftTable() {
             </span>
         );
     });
-                        const counterAvg =
-                            counters.reduce((sum, c) => sum + c.rating, 0) /
-                            (counters.length || 1);
-                        const counterPhrase =
-                            counterAvg >= 0 ? "Strong against" : "Weak against";
-                        const counterPercent = null as null;
-
                         // split counters into strong/weak by percent threshold
                         let strongCounters = counters
                             .filter((c) => {
@@ -643,12 +636,12 @@ export default function DraftTable() {
                         }
 
                         if (strongCounters.length > 0) {
-                            positive.push(
-                                <div class="text-green-400 text-base">
-                                    • {counterPhrase} {strongCounters}
-                                </div>
-                            );
-                        }
+                        positive.push(
+                            <div class="text-green-400 text-base">
+                                • Strong against {strongCounters}
+                            </div>
+                        );
+                    }
                         if (weakCounters.length > 0) {
                             negative.push(
                                 <div class="text-red-400 text-base">

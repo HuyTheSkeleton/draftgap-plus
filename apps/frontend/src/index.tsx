@@ -18,6 +18,7 @@ import { DraftAnalysisProvider } from "./contexts/DraftAnalysisContext";
 import { DatasetProvider } from "./contexts/DatasetContext";
 import { DraftFiltersProvider } from "./contexts/DraftFiltersContext";
 import { ExtraDraftAnalysisProvider } from "./contexts/ExtraDraftAnalysisContext";
+import { TrainingProvider } from "./contexts/TrainingContext";
 
 setupMobileVH();
 setupAnalytics();
@@ -33,6 +34,7 @@ render(
                         <DraftViewProvider>
                             <DraftFiltersProvider>
                                 <DraftProvider>
+                                        <TrainingProvider>
                                     <DraftAnalysisProvider>
                                         <ExtraDraftAnalysisProvider>
                                             <DraftSuggestionsProvider>
@@ -51,6 +53,7 @@ render(
                                             </DraftSuggestionsProvider>
                                         </ExtraDraftAnalysisProvider>
                                     </DraftAnalysisProvider>
+                                        </TrainingProvider>
                                 </DraftProvider>
                             </DraftFiltersProvider>
                         </DraftViewProvider>

@@ -10,7 +10,7 @@ type DraftView =
       }
     | {
           type: "builds";
-      };
+      }
 
 function createDraftViewContext() {
     const [currentDraftView, setCurrentDraftView] = createSignal<DraftView>({

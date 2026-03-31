@@ -34,11 +34,13 @@ import { Team } from "@draftgap/core/src/models/Team";
 import { championName } from "../../utils/i18n";
 import { useDraftAnalysis } from "../../contexts/DraftAnalysisContext";
 import { ratingToWinrate } from "@draftgap/core/src/rating/ratings";
+import { useTraining } from "../../contexts/TrainingContext";
 
 export default function DraftTable() {
     const owner = getOwner();
     const { dataset } = useDataset();
     const { allyDraftAnalysis, opponentDraftAnalysis } = useDraftAnalysis();
+    const { isTrainingMode, playerRole } = useTraining();
     
     const currentTeamRating = () => {
         const analysis = selection.team === "opponent" 
@@ -91,7 +93,9 @@ export default function DraftTable() {
             });
         }
 
-        if (roleFilter() !== undefined) {
+        if (isTrainingMode()) {
+            filtered = filtered.filter((s) => s.role === playerRole());
+        } else if (roleFilter() !== undefined) {
             filtered = filtered.filter((s) => s.role === roleFilter());
         }
 
@@ -133,6 +137,14 @@ export default function DraftTable() {
                 else if (!aUnowned && bUnowned) return -1;
                 else return 0;
             });
+        }
+
+        if (isTrainingMode()) {
+            filtered = [...filtered].sort((a, b) =>
+                dataset()!.championData[a.championKey].name.localeCompare(
+                    dataset()!.championData[b.championKey].name
+                )
+            );
         }
 
         return filtered;
@@ -266,7 +278,7 @@ export default function DraftTable() {
                 return (
                     <div class="flex items-center gap-2">
                         <ChampionCell championKey={info.getValue<string>()} />
-                        <Show when={suggestion.tier}>
+                        <Show when={suggestion.tier && !isTrainingMode()}>
                             {/* Changed text-xs to text-lg (larger) and added italic for style */}
                             <span class={`font-black text-3xl italic ml-1 ${suggestion.tierColor}`}>
                             {suggestion.tier}
@@ -291,7 +303,12 @@ export default function DraftTable() {
                           suggestion.draftResult.allyChampionRating.totalRating,
                       cell: (info) => (
                           <div class="flex justify-end">
-                              <RatingText rating={info.getValue<number>()} />
+                              <Show
+                                  when={!isTrainingMode()}
+                                  fallback={<span class="tabular-nums">50.00%</span>}
+                              >
+                                  <RatingText rating={info.getValue<number>()} />
+                              </Show>
                           </div>
                       ),
                   },
@@ -301,7 +318,12 @@ export default function DraftTable() {
                           suggestion.draftResult.matchupRating.totalRating,
                       cell: (info) => (
                           <div class="flex justify-end">
-                              <RatingText rating={info.getValue<number>()} />
+                              <Show
+                                  when={!isTrainingMode()}
+                                  fallback={<span class="tabular-nums">50.00%</span>}
+                              >
+                                  <RatingText rating={info.getValue<number>()} />
+                              </Show>
                           </div>
                       ),
                   },
@@ -311,7 +333,12 @@ export default function DraftTable() {
                           suggestion.draftResult.allyDuoRating.totalRating,
                       cell: (info) => (
                           <div class="flex justify-end">
-                              <RatingText rating={info.getValue<number>()} />
+                              <Show
+                                  when={!isTrainingMode()}
+                                  fallback={<span class="tabular-nums">50.00%</span>}
+                              >
+                                  <RatingText rating={info.getValue<number>()} />
+                              </Show>
                           </div>
                       ),
                   },
@@ -325,6 +352,14 @@ export default function DraftTable() {
                 return newWinrate - baseWinrate;
             },
             cell: (info) => {
+                if (isTrainingMode()) {
+                    return (
+                        <div class="flex justify-end font-bold text-base text-neutral-400">
+                            50.00%
+                        </div>
+                    );
+                }
+
                 const delta = info.getValue<number>();
                 const isPositive = delta > 0;
                 return (
@@ -346,7 +381,12 @@ export default function DraftTable() {
             accessorFn: (suggestion) => suggestion.draftResult.totalRating,
             cell: (info) => (
                 <div class="flex justify-end">
-                    <RatingText rating={info.getValue<number>()} />
+                    <Show
+                        when={!isTrainingMode()}
+                        fallback={<span class="tabular-nums">50.00%</span>}
+                    >
+                        <RatingText rating={info.getValue<number>()} />
+                    </Show>
                 </div>
             ),
         },
@@ -478,6 +518,10 @@ export default function DraftTable() {
                     (el as any)._tooltipInitialized = true;
 
                     tooltip(el, () => {
+                        if (isTrainingMode()) {
+                            return { content: null };
+                        }
+
                         return runWithOwner(owner, () => {
                         const suggestion = r.original;
                         const ds = dataset();

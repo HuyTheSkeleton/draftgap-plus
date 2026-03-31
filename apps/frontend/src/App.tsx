@@ -39,6 +39,7 @@ import { useMedia } from "./hooks/useMedia";
 import { buttonVariants } from "./components/common/Button";
 import { cn } from "./utils/style";
 import { LanguageDropdownMenu } from "./components/LanguageMenu";
+import { useTraining } from "./contexts/TrainingContext";
 
 const App: Component = () => {
     const { config } = useUser();
@@ -49,12 +50,19 @@ const App: Component = () => {
     const { startLolClientIntegration, stopLolClientIntegration } =
         useLolClient();
     const { isDesktop } = useMedia();
+    const { isTrainingMode, stopTraining } = useTraining();
 
     createEffect(() => {
         if (config.disableLeagueClientIntegration) {
             stopLolClientIntegration();
         } else {
             startLolClientIntegration();
+        }
+    });
+
+    createEffect(() => {
+        if (isTrainingMode() && showSettings()) {
+            setShowSettings(false);
         }
     });
 
@@ -121,25 +129,44 @@ const App: Component = () => {
                                             label: "Draft Analysis",
                                             value: "analysis",
                                         },
-                                        ...(config.enableBetaFeatures
-                                            ? ([
-                                                  {
-                                                      label: "Builds",
-                                                      value: "builds",
-                                                  },
-                                              ] as const)
-                                            : []),
+                                            ...(config.enableBetaFeatures
+                                                ? ([
+                                                      {
+                                                          label: "Builds",
+                                                          value: "builds",
+                                                      },
+                                                  ] as const)
+                                                : []),
                                     ] as const
                                 }
                                 selected={currentDraftView().type}
                                 onChange={(type) =>
-                                    setCurrentDraftView({
-                                        type,
-                                        subType: "draft",
-                                    })
+                                    setCurrentDraftView(
+                                        type === "draft"
+                                            ? {
+                                                  type,
+                                                  subType: "draft",
+                                              }
+                                            : {
+                                                  type,
+                                              }
+                                    )
                                 }
                                 class="xl:px-8"
                             />
+                            <Show when={isTrainingMode()}>
+                                <div class="mx-4 xl:mx-8 mt-3 mb-1 px-3 py-2 rounded border border-amber-500/40 bg-amber-900/20 flex items-center justify-between">
+                                    <span class="text-amber-300 font-semibold uppercase tracking-wide text-sm">
+                                        Training Mode
+                                    </span>
+                                    <button
+                                        onClick={stopTraining}
+                                        class="px-3 py-1 rounded bg-amber-700 hover:bg-amber-600 text-white text-sm font-semibold"
+                                    >
+                                        Stop Training
+                                    </button>
+                                </div>
+                            </Show>
                             <Switch>
                                 <Match
                                     when={currentDraftView().type == "draft"}
@@ -207,7 +234,7 @@ const App: Component = () => {
             </Dialog>
             <header class="bg-primary px-1 py-0 border-b-2 border-neutral-700 flex justify-between">
                 <h1 class="text-4xl sm:text-5xl mr-2 ml-1 mt-1 mb-[0.4rem] font-semibold tracking-wide">
-                    DRAFTGAP+ <span class="text-lg text-neutral-500 font-normal">v3.2.0</span>
+                    DRAFTGAP+ <span class="text-lg text-neutral-500 font-normal">v4.0.1</span>
                 </h1>
                 <div class="flex items-center gap-4">
                     <div class="text-xs text-neutral-400 hidden md:flex flex-col text-right uppercase">
@@ -227,14 +254,24 @@ const App: Component = () => {
                         <LanguageDropdownMenu />
                         <Dialog
                             open={showSettings()}
-                            onOpenChange={setShowSettings}
+                            onOpenChange={(open) => {
+                                if (isTrainingMode()) {
+                                    setShowSettings(false);
+                                    return;
+                                }
+                                setShowSettings(open);
+                            }}
                         >
                             <DialogTrigger
+                                disabled={isTrainingMode()}
                                 class={cn(
                                     buttonVariants({
                                         variant: "transparent",
                                     }),
-                                    "px-1 py-2"
+                                    "px-1 py-2",
+                                    isTrainingMode()
+                                        ? "opacity-40 cursor-not-allowed"
+                                        : ""
                                 )}
                             >
                                 <Icon path={cog_6Tooth} class="w-7" />
@@ -242,7 +279,10 @@ const App: Component = () => {
                             <SettingsDialog />
                         </Dialog>
                         <OptionsDropdownMenu
-                            setShowSettings={setShowSettings}
+                            setShowSettings={(show) => {
+                                if (isTrainingMode()) return;
+                                setShowSettings(show);
+                            }}
                             setShowFAQ={setShowFAQ}
                         />
                     </div>
@@ -286,10 +326,12 @@ const App: Component = () => {
                             <Badge
                                 as="button"
                                 onClick={() =>
-                                    setCurrentDraftView({
-                                        type: "draft",
-                                        subType: view,
-                                    })
+                                    setCurrentDraftView(
+                                        {
+                                            type: "draft",
+                                            subType: view,
+                                        }
+                                    )
                                 }
                                 theme={
                                     mobileTab() === view

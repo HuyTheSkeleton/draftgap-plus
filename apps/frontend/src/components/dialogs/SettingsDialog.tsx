@@ -13,6 +13,7 @@ import {
     DraftTablePlacement,
     StatsSite,
 } from "@draftgap/core/src/models/user/Config";
+import { Role, displayNameByRole } from "@draftgap/core/src/models/Role";
 import {
     Dialog,
     DialogContent,
@@ -21,10 +22,26 @@ import {
     DialogTrigger,
 } from "../common/Dialog";
 import { FAQDialog } from "./FAQDialog";
+import { useTraining } from "../../contexts/TrainingContext";
 
 export default function SettingsDialog() {
     const { isDesktop } = useMedia();
     const { config, setConfig } = useUser();
+    const {
+        isTrainingMode,
+        playerRole,
+        setPlayerRole,
+        pickPosition,
+        setPickPosition,
+        totalWins,
+        totalLosses,
+        roundsPlayed,
+        winRate,
+        avgPlacement,
+        startTraining,
+        stopTraining,
+        resetStats,
+    } = useTraining();
 
     const riskLevelOptions: ButtonGroupOption<RiskLevel>[] = RiskLevel.map(
         (level) => ({
@@ -66,6 +83,22 @@ export default function SettingsDialog() {
             label: "coachless",
         },
     ] as const;
+
+    const roleOptions: ButtonGroupOption<Role>[] = [0, 1, 2, 3, 4].map(
+        (role) => ({
+            value: role as Role,
+            label: displayNameByRole[role as Role],
+        })
+    );
+
+    const pickOptions: ButtonGroupOption<0 | 1 | 2 | 3 | 4 | 5>[] = [
+        { value: 0, label: "Random" },
+        { value: 1, label: "1" },
+        { value: 2, label: "2" },
+        { value: 3, label: "3" },
+        { value: 4, label: "4" },
+        { value: 5, label: "5" },
+    ];
 
     return (
         <DialogContent>
@@ -224,6 +257,54 @@ export default function SettingsDialog() {
                             })
                         }
                     />
+                </div>
+            </div>
+
+            <div>
+                <h3 class="text-3xl uppercase">Training</h3>
+                <div class="flex flex-col gap-1 mt-2">
+                    <span class="text-lg uppercase">Lane</span>
+                    <ButtonGroup
+                        options={roleOptions}
+                        selected={playerRole()}
+                        size="sm"
+                        onChange={(value) => setPlayerRole(value)}
+                    />
+                </div>
+                <div class="flex flex-col gap-1 mt-2">
+                    <span class="text-lg uppercase">Pick order</span>
+                    <ButtonGroup
+                        options={pickOptions}
+                        selected={pickPosition()}
+                        size="sm"
+                        onChange={(value) => setPickPosition(value)}
+                    />
+                </div>
+                <div class="text-sm text-neutral-300 mt-3 space-y-1">
+                    <div>
+                        Record: {totalWins()}W {totalLosses()}L ({(winRate() * 100).toFixed(1)}%)
+                    </div>
+                    <div>Rounds: {roundsPlayed()}</div>
+                    <div>
+                        Avg placement: {roundsPlayed() === 0 ? "-" : avgPlacement().toFixed(2)}
+                    </div>
+                </div>
+                <div class="flex gap-2 mt-3">
+                    <button
+                        onClick={() => (isTrainingMode() ? stopTraining() : startTraining())}
+                        class="px-4 py-2 rounded bg-neutral-700 hover:bg-neutral-600 text-white font-semibold"
+                    >
+                        {isTrainingMode() ? "Stop Training" : "Start Training"}
+                    </button>
+                    <button
+                        onClick={resetStats}
+                        class="px-4 py-2 rounded bg-neutral-800 hover:bg-neutral-700 text-white"
+                    >
+                        Reset Results
+                    </button>
+                </div>
+                <div class="text-xs text-neutral-400 mt-2">
+                    Training uses your Draft settings for Ignore Individual Winrates and Risk Level.
                 </div>
             </div>
         </DialogContent>

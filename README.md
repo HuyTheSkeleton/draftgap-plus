@@ -56,6 +56,12 @@ DraftGap+ keeps all the excellent features that make the original tool great:
 4.  Open the app and start your League of Legends client.
 
 ## 📜 Changelog
+* **v4.0.1** – 2026-03-31
+  - added a full draft training mode workflow integrated into Settings (lane selection, pick order, start/stop)
+  - training now auto-generates realistic drafts with one open player slot and role-appropriate champion pools
+  - locked role filtering to the selected training lane and hid recommendation hints during training (alphabetical list, hidden tiers, hidden hover insights)
+  - added instant correct/wrong pick feedback, persisted training stats, average placement tracking, and a reset results action
+
 * **v3.2.0** – 2026-03-25
   - replaced text-based champion names with direct image icons in the hover insights tooltip for a cleaner visual experience
   - integrated champion icons into the Analysis tab's solo matchup insights to improve visual clarity

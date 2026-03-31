@@ -5,11 +5,13 @@ import { RoleIcon } from "../icons/roles/RoleIcon";
 import { useDraftAnalysis } from "../../contexts/DraftAnalysisContext";
 import { useDraftFilters } from "../../contexts/DraftFiltersContext";
 import { cn } from "../../utils/style";
+import { useTraining } from "../../contexts/TrainingContext";
 
 export function RoleFilter(props: ComponentProps<"span">) {
     const { selection, draftFinished } = useDraft();
     const { roleFilter, setRoleFilter } = useDraftFilters();
     const { getFilledRoles } = useDraftAnalysis();
+    const { isTrainingMode, playerRole } = useTraining();
 
     const filledRoles = () =>
         (selection.team && getFilledRoles(selection.team)) ?? new Set();
@@ -30,12 +32,21 @@ export function RoleFilter(props: ComponentProps<"span">) {
                             "-ml-px": i() !== 0,
                             "text-white !bg-neutral-700": roleFilter() === role,
                         }}
-                        onClick={() =>
+                        onClick={() => {
+                            if (isTrainingMode()) {
+                                setRoleFilter(playerRole());
+                                return;
+                            }
+
                             roleFilter() === role
                                 ? setRoleFilter(undefined)
-                                : setRoleFilter(role)
+                                : setRoleFilter(role);
+                        }}
+                        disabled={
+                            filledRoles().has(role) ||
+                            draftFinished() ||
+                            (isTrainingMode() && role !== playerRole())
                         }
-                        disabled={filledRoles().has(role) || draftFinished()}
                     >
                         <RoleIcon role={role} class="h-7" />
                     </button>

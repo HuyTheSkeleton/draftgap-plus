@@ -63,3 +63,24 @@ export const createMustSelectToast = () => {
         }
     );
 };
+
+export const createTrainingResultToast = (won: boolean, rank: number) => {
+    const title = won ? "Correct Pick" : "Wrong Pick";
+    const content = won
+        ? `Nice. Your pick ranked #${rank} for this role.`
+        : `Not in top 10. Your pick ranked #${rank}.`;
+
+    return toast.custom(
+        (t) => (
+            <Toast
+                t={t}
+                icon={won ? check : exclamationCircle}
+                title={title}
+                content={content}
+            />
+        ),
+        {
+            duration: 1800,
+        }
+    );
+};

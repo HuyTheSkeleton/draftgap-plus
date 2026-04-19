@@ -17,7 +17,7 @@ tooltip;
 import { Table } from "../common/Table";
 import ChampionCell from "../common/ChampionCell";
 import { RoleCell } from "../common/RoleCell";
-import { batch, createSignal, onCleanup, onMount, Show, JSX, getOwner, runWithOwner } from "solid-js";
+import { batch, createEffect, createSignal, onCleanup, onMount, Show, JSX, getOwner, runWithOwner } from "solid-js";
 import { Icon } from "solid-heroicons";
 import { star } from "solid-heroicons/solid";
 import { star as starOutline } from "solid-heroicons/outline";
@@ -40,7 +40,13 @@ export default function DraftTable() {
     const owner = getOwner();
     const { dataset } = useDataset();
     const { allyDraftAnalysis, opponentDraftAnalysis } = useDraftAnalysis();
-    const { isTrainingMode, playerRole } = useTraining();
+    const {
+        isTrainingMode,
+        playerRole,
+        trainingSuggestions,
+        trainingFeedbackPending,
+        pickedChampionKey,
+    } = useTraining();
     
     const currentTeamRating = () => {
         const analysis = selection.team === "opponent" 
@@ -52,6 +58,7 @@ export default function DraftTable() {
         useDraft();
     const {
         search,
+        setSearch,
         roleFilter,
         setRoleFilter,
         favouriteFilter,
@@ -60,10 +67,15 @@ export default function DraftTable() {
     const { allySuggestions, opponentSuggestions } = useDraftSuggestions();
     const { isFavourite, setFavourite, config } = useUser();
 
-    const suggestions = () =>
-        selection.team === "opponent"
+    const suggestions = () => {
+        if (isTrainingMode()) {
+            return trainingSuggestions();
+        }
+
+        return selection.team === "opponent"
             ? opponentSuggestions()
             : allySuggestions();
+    };
 
     const ownsChampion = (championKey: string) =>
         ownedChampions().size === 0 || ownedChampions().has(championKey);
@@ -99,13 +111,13 @@ export default function DraftTable() {
             filtered = filtered.filter((s) => s.role === roleFilter());
         }
 
-        if (favouriteFilter()) {
+        if (!isTrainingMode() && favouriteFilter()) {
             filtered = filtered.filter((s) =>
                 isFavourite(s.championKey, s.role)
             );
         }
 
-        if (config.showFavouritesAtTop) {
+        if (!isTrainingMode() && config.showFavouritesAtTop) {
             filtered = [...filtered].sort((a, b) => {
                 const aFav = isFavourite(a.championKey, a.role);
                 const bFav = isFavourite(b.championKey, b.role);
@@ -115,9 +127,9 @@ export default function DraftTable() {
             });
         }
 
-        if (config.banPlacement === "hidden") {
+        if (!isTrainingMode() && config.banPlacement === "hidden") {
             filtered = filtered.filter((s) => !bans.includes(s.championKey));
-        } else if (config.banPlacement === "bottom") {
+        } else if (!isTrainingMode() && config.banPlacement === "bottom") {
             filtered = [...filtered].sort((a, b) => {
                 const aBanned = bans.includes(a.championKey);
                 const bBanned = bans.includes(b.championKey);
@@ -127,9 +139,9 @@ export default function DraftTable() {
             });
         }
 
-        if (config.unownedPlacement === "hidden") {
+        if (!isTrainingMode() && config.unownedPlacement === "hidden") {
             filtered = filtered.filter((s) => ownsChampion(s.championKey));
-        } else if (config.unownedPlacement === "bottom") {
+        } else if (!isTrainingMode() && config.unownedPlacement === "bottom") {
             filtered = [...filtered].sort((a, b) => {
                 const aUnowned = !ownsChampion(a.championKey);
                 const bUnowned = !ownsChampion(b.championKey);
@@ -139,7 +151,8 @@ export default function DraftTable() {
             });
         }
 
-        if (isTrainingMode()) {
+        if (isTrainingMode() && !trainingFeedbackPending()) {
+            // Hide the answer key before the user commits a pick.
             filtered = [...filtered].sort((a, b) =>
                 dataset()!.championData[a.championKey].name.localeCompare(
                     dataset()!.championData[b.championKey].name
@@ -202,6 +215,24 @@ export default function DraftTable() {
     }
 
     const columns: () => ColumnDef<Suggestion>[] = () => [
+        ...(isTrainingMode() && trainingFeedbackPending()
+            ? ([
+                  {
+                      id: "rank",
+                      header: "#",
+                      cell: (info: CellContext<Suggestion, unknown>) => (
+                          <div class="text-right text-neutral-400 tabular-nums font-semibold">
+                              {info.row.index + 1}
+                          </div>
+                      ),
+                      meta: {
+                          headerClass: "w-1 text-right",
+                          cellClass: "w-1",
+                      },
+                      enableSorting: false,
+                  },
+              ] as ColumnDef<Suggestion>[])
+            : []),
         {
             id: "favourite",
             header: () => (
@@ -304,7 +335,7 @@ export default function DraftTable() {
                       cell: (info) => (
                           <div class="flex justify-end">
                               <Show
-                                  when={!isTrainingMode()}
+                                  when={!isTrainingMode() || trainingFeedbackPending()}
                                   fallback={<span class="tabular-nums">50.00%</span>}
                               >
                                   <RatingText rating={info.getValue<number>()} />
@@ -319,7 +350,7 @@ export default function DraftTable() {
                       cell: (info) => (
                           <div class="flex justify-end">
                               <Show
-                                  when={!isTrainingMode()}
+                                  when={!isTrainingMode() || trainingFeedbackPending()}
                                   fallback={<span class="tabular-nums">50.00%</span>}
                               >
                                   <RatingText rating={info.getValue<number>()} />
@@ -334,7 +365,7 @@ export default function DraftTable() {
                       cell: (info) => (
                           <div class="flex justify-end">
                               <Show
-                                  when={!isTrainingMode()}
+                                  when={!isTrainingMode() || trainingFeedbackPending()}
                                   fallback={<span class="tabular-nums">50.00%</span>}
                               >
                                   <RatingText rating={info.getValue<number>()} />
@@ -352,7 +383,7 @@ export default function DraftTable() {
                 return newWinrate - baseWinrate;
             },
             cell: (info) => {
-                if (isTrainingMode()) {
+                if (isTrainingMode() && !trainingFeedbackPending()) {
                     return (
                         <div class="flex justify-end font-bold text-base text-neutral-400">
                             50.00%
@@ -382,7 +413,7 @@ export default function DraftTable() {
             cell: (info) => (
                 <div class="flex justify-end">
                     <Show
-                        when={!isTrainingMode()}
+                        when={!isTrainingMode() || trainingFeedbackPending()}
                         fallback={<span class="tabular-nums">50.00%</span>}
                     >
                         <RatingText rating={info.getValue<number>()} />
@@ -415,6 +446,13 @@ export default function DraftTable() {
     ];
 
     const [sorting, setSorting] = createSignal<SortingState>([]);
+
+    createEffect(() => {
+        if (isTrainingMode()) {
+            setSorting([]);
+        }
+    });
+
     const table = createSolidTable({
         get data() {
             return filteredSuggestions();
@@ -427,7 +465,12 @@ export default function DraftTable() {
                 return sorting();
             },
         },
-        onSortingChange: setSorting,
+        onSortingChange: (updater) => {
+            if (isTrainingMode()) {
+                return;
+            }
+            setSorting(updater);
+        },
         getCoreRowModel: getCoreRowModel(),
         getSortedRowModel: getSortedRowModel(),
     });
@@ -435,6 +478,34 @@ export default function DraftTable() {
     function pick(row: Row<Suggestion>) {
         if (!selection.team) {
             createMustSelectToast();
+            return;
+        }
+
+        if (isTrainingMode() && trainingFeedbackPending()) {
+            return;
+        }
+
+        if (isTrainingMode()) {
+            setSearch("");
+
+            pickChampion(
+                selection.team,
+                selection.index,
+                row.original.championKey,
+                row.original.role,
+                {
+                    updateSelection: false,
+                    resetFilters: false,
+                    reportEvent: false,
+                }
+            );
+
+            const draftTableEl = document.getElementById("draft-table");
+            if (draftTableEl) {
+                draftTableEl.scrollTop = 0;
+            }
+
+            document.getElementById("draftTableSearch")?.focus();
             return;
         }
 
@@ -506,19 +577,37 @@ export default function DraftTable() {
         <>
             <Table
                 table={table}
-                onClickRow={pick}
-                rowClassName={(r) =>
-                    bans.find((b) => b === r.original.championKey) ||
-                    !ownsChampion(r.original.championKey)
-                        ? "opacity-30"
-                        : ""
+                onClickRow={
+                    isTrainingMode() && trainingFeedbackPending()
+                        ? undefined
+                        : pick
                 }
+                rowClassName={(r) => {
+                    const classes: string[] = [];
+
+                    if (
+                        bans.find((b) => b === r.original.championKey) ||
+                        !ownsChampion(r.original.championKey)
+                    ) {
+                        classes.push("opacity-30");
+                    }
+
+                    if (
+                        isTrainingMode() &&
+                        trainingFeedbackPending() &&
+                        pickedChampionKey() === r.original.championKey
+                    ) {
+                        classes.push("bg-emerald-900/30 ring-2 ring-emerald-400/70");
+                    }
+
+                    return classes.join(" ");
+                }}
                 rowRef={(r, el) => {
                     if ((el as any)._tooltipInitialized) return;
                     (el as any)._tooltipInitialized = true;
 
                     tooltip(el, () => {
-                        if (isTrainingMode()) {
+                        if (isTrainingMode() && !trainingFeedbackPending()) {
                             return { content: null };
                         }
 

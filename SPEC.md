@@ -51,6 +51,7 @@ draftgap-plus/
 - Champion recommendation suggestions ranked by delta (winrate impact)
 - Hover tooltips showing matchup breakdowns and synergy scores
 - Analysis tab with popularity/power indicators
+- Training mode post-pick feedback step: keep ranked suggestions visible, highlight player pick, and require manual continue to next round
 - Desktop app packaging via MSI installer
 - Unopinionated, stats-driven recommendations (no subjective tiering)
 

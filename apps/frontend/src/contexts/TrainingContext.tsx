@@ -12,6 +12,7 @@ import {
     evaluatePick,
     generateRound,
 } from "@draftgap/core/src/training/TrainingGame";
+import { Suggestion } from "@draftgap/core/src/draft/suggestions";
 import { Role } from "@draftgap/core/src/models/Role";
 import { useDataset } from "./DatasetContext";
 import { useDraft } from "./DraftContext";
@@ -19,6 +20,7 @@ import { useUser } from "./UserContext";
 import { useDraftFilters } from "./DraftFiltersContext";
 import { createTrainingResultToast } from "../utils/toast";
 import { useDraftView } from "./DraftViewContext";
+import toast from "solid-toast";
 
 interface TrainingContextType {
     isTrainingMode: () => boolean;
@@ -31,6 +33,11 @@ interface TrainingContextType {
     roundsPlayed: () => number;
     winRate: () => number;
     avgPlacement: () => number;
+    trainingSuggestions: () => Suggestion[];
+    trainingFeedbackPending: () => boolean;
+    pickedChampionKey: () => string | undefined;
+    pickedChampionRank: () => number | undefined;
+    continueTrainingRound: () => void;
     startTraining: () => void;
     stopTraining: () => void;
     resetStats: () => void;
@@ -55,6 +62,12 @@ export function createTrainingContext() {
     const [roundsPlayed, setRoundsPlayed] = createSignal(0);
     const [currentRound, setCurrentRound] = createSignal<TrainingRound>();
     const [resolvedRoundId, setResolvedRoundId] = createSignal<number>();
+    const [trainingFeedbackPending, setTrainingFeedbackPending] =
+        createSignal(false);
+    const [pickedChampionKey, setPickedChampionKey] = createSignal<string>();
+    const [pickedChampionRank, setPickedChampionRank] = createSignal<number>();
+    const [trainingResultToastId, setTrainingResultToastId] =
+        createSignal<string>();
 
     const config_ = () => ({
         ignoreChampionWinrates: config.ignoreChampionWinrates,
@@ -156,9 +169,25 @@ export function createTrainingContext() {
             select("ally", nextRound.playerSlotIndex, false);
             setRoleFilter(nextRound.playerRole);
 
+            if (trainingResultToastId() !== undefined) {
+                toast.dismiss(trainingResultToastId());
+                setTrainingResultToastId(undefined);
+            }
+
             setResolvedRoundId(undefined);
+            setTrainingFeedbackPending(false);
+            setPickedChampionKey(undefined);
+            setPickedChampionRank(undefined);
             setCurrentRound(nextRound);
         });
+    }
+
+    function continueTrainingRound() {
+        if (!isTrainingMode() || !trainingFeedbackPending()) {
+            return;
+        }
+
+        prepareNextRound();
     }
 
     function startTraining() {
@@ -176,9 +205,17 @@ export function createTrainingContext() {
     }
 
     function stopTraining() {
+        if (trainingResultToastId() !== undefined) {
+            toast.dismiss(trainingResultToastId());
+            setTrainingResultToastId(undefined);
+        }
+
         setIsTrainingMode(false);
         setCurrentRound(undefined);
         setResolvedRoundId(undefined);
+        setTrainingFeedbackPending(false);
+        setPickedChampionKey(undefined);
+        setPickedChampionRank(undefined);
     }
 
     function resetStats() {
@@ -221,14 +258,17 @@ export function createTrainingContext() {
             nextPlacementSum,
             nextRoundsPlayed
         );
-        createTrainingResultToast(result.won, result.playerPickRank);
+        if (trainingResultToastId() !== undefined) {
+            toast.dismiss(trainingResultToastId());
+        }
+        setTrainingResultToastId(
+            String(createTrainingResultToast(result.won, result.playerPickRank))
+        );
 
         setResolvedRoundId(round.roundId);
-        setTimeout(() => {
-            if (isTrainingMode()) {
-                prepareNextRound();
-            }
-        }, 650);
+        setPickedChampionKey(pickedChampion);
+        setPickedChampionRank(result.playerPickRank);
+        setTrainingFeedbackPending(true);
     });
 
     const winRate = () => {
@@ -238,6 +278,15 @@ export function createTrainingContext() {
 
     const avgPlacement = () => {
         return roundsPlayed() === 0 ? 0 : placementSum() / roundsPlayed();
+    };
+
+    const trainingSuggestions = () => {
+        const round = currentRound();
+        if (!round) {
+            return [];
+        }
+
+        return round.suggestions.filter((s) => s.role === round.playerRole);
     };
 
     return {
@@ -251,6 +300,11 @@ export function createTrainingContext() {
         roundsPlayed,
         winRate,
         avgPlacement,
+        trainingSuggestions,
+        trainingFeedbackPending,
+        pickedChampionKey,
+        pickedChampionRank,
+        continueTrainingRound,
         startTraining,
         stopTraining,
         resetStats,

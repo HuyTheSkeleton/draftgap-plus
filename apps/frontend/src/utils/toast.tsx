@@ -80,7 +80,7 @@ export const createTrainingResultToast = (won: boolean, rank: number) => {
             />
         ),
         {
-            duration: 1800,
+            duration: Infinity,
         }
     );
 };

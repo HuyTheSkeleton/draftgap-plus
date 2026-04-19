@@ -50,7 +50,12 @@ const App: Component = () => {
     const { startLolClientIntegration, stopLolClientIntegration } =
         useLolClient();
     const { isDesktop } = useMedia();
-    const { isTrainingMode, stopTraining } = useTraining();
+    const {
+        isTrainingMode,
+        stopTraining,
+        trainingFeedbackPending,
+        continueTrainingRound,
+    } = useTraining();
 
     createEffect(() => {
         if (config.disableLeagueClientIntegration) {
@@ -159,12 +164,21 @@ const App: Component = () => {
                                     <span class="text-amber-300 font-semibold uppercase tracking-wide text-sm">
                                         Training Mode
                                     </span>
-                                    <button
-                                        onClick={stopTraining}
-                                        class="px-3 py-1 rounded bg-amber-700 hover:bg-amber-600 text-white text-sm font-semibold"
-                                    >
-                                        Stop Training
-                                    </button>
+                                    <div class="flex items-center gap-2">
+                                        <button
+                                            onClick={continueTrainingRound}
+                                            disabled={!trainingFeedbackPending()}
+                                            class="px-3 py-1 rounded bg-emerald-700 hover:bg-emerald-600 text-white text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
+                                        >
+                                            Continue
+                                        </button>
+                                        <button
+                                            onClick={stopTraining}
+                                            class="px-3 py-1 rounded bg-amber-700 hover:bg-amber-600 text-white text-sm font-semibold"
+                                        >
+                                            Stop Training
+                                        </button>
+                                    </div>
                                 </div>
                             </Show>
                             <Switch>
@@ -234,7 +248,7 @@ const App: Component = () => {
             </Dialog>
             <header class="bg-primary px-1 py-0 border-b-2 border-neutral-700 flex justify-between">
                 <h1 class="text-4xl sm:text-5xl mr-2 ml-1 mt-1 mb-[0.4rem] font-semibold tracking-wide">
-                    DRAFTGAP+ <span class="text-lg text-neutral-500 font-normal">v4.0.1</span>
+                    DRAFTGAP+ <span class="text-lg text-neutral-500 font-normal">v4.1.1</span>
                 </h1>
                 <div class="flex items-center gap-4">
                     <div class="text-xs text-neutral-400 hidden md:flex flex-col text-right uppercase">

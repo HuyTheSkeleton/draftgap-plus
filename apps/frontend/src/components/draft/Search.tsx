@@ -2,11 +2,19 @@ import { Icon } from "solid-heroicons";
 import { magnifyingGlass, xMark } from "solid-heroicons/outline";
 import { onCleanup, onMount, Show } from "solid-js";
 import { useDraftFilters } from "../../contexts/DraftFiltersContext";
+import { useTraining } from "../../contexts/TrainingContext";
 import { useUser } from "../../contexts/UserContext";
 
 export function Search() {
     const { search, setSearch } = useDraftFilters();
     const { setConfig } = useUser();
+    const {
+        isTrainingMode,
+        trainingFeedbackPending,
+        continueTrainingRound,
+        trainingInsightIndex,
+        setTrainingInsightIndex,
+    } = useTraining();
 
     // eslint-disable-next-line prefer-const -- solid js ref
     let inputEl: HTMLInputElement | undefined = undefined;
@@ -14,6 +22,7 @@ export function Search() {
     function onInput(e: Event) {
         const input = e.currentTarget as HTMLInputElement;
         setSearch(input.value);
+        setTrainingInsightIndex(undefined);
         if (input.value === "DANGEROUSLY_ENABLE_BETA_FEATURES") {
             setConfig((config) => ({ ...config, enableBetaFeatures: true }));
             setSearch("");
@@ -22,6 +31,48 @@ export function Search() {
             setConfig((config) => ({ ...config, enableBetaFeatures: false }));
             setSearch("");
         }
+    }
+
+    function getInsightRows() {
+        return [...document.querySelectorAll<HTMLTableRowElement>("#draft-table tbody tr")].filter(
+            (row) => row.classList.contains("group/row")
+        );
+    }
+
+    function clearInsightPreview() {
+        const rows = getInsightRows();
+        const current = trainingInsightIndex() ?? -1;
+        if (current >= 0 && current < rows.length) {
+            rows[current].dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
+        }
+        setTrainingInsightIndex(undefined);
+    }
+
+    function focusInsightRow(reverse = false) {
+        const rows = getInsightRows();
+        if (!rows.length) {
+            return false;
+        }
+
+        const current = trainingInsightIndex() ?? -1;
+        const hasCurrent = current >= 0 && current < rows.length;
+        const next = reverse
+            ? hasCurrent
+                ? current === 0
+                    ? rows.length - 1
+                    : current - 1
+                : rows.length - 1
+            : hasCurrent
+            ? (current + 1) % rows.length
+            : 0;
+
+        if (hasCurrent) {
+            rows[current].dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
+        }
+
+        setTrainingInsightIndex(next);
+        rows[next].dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
+        return true;
     }
 
     onMount(() => {
@@ -37,8 +88,31 @@ export function Search() {
         window.addEventListener("keydown", onControlF);
 
         const onTabOrEnter = (e: KeyboardEvent) => {
-            if (e.key === "Tab" || e.key === "Enter") {
+            if (e.key === "Tab") {
+                if (isTrainingMode() && trainingFeedbackPending()) {
+                    e.preventDefault();
+                    focusInsightRow(e.shiftKey);
+                    return;
+                }
+
                 e.preventDefault();
+                const firstTableRow = document.querySelector("table tbody tr");
+                if (firstTableRow) {
+                    (firstTableRow as HTMLElement).focus();
+                }
+                return;
+            }
+
+            if (e.key === "Enter") {
+                e.preventDefault();
+
+                if (isTrainingMode() && trainingFeedbackPending()) {
+                    clearInsightPreview();
+                    continueTrainingRound();
+                    el.focus();
+                    return;
+                }
+
                 const firstTableRow = document.querySelector("table tbody tr");
                 if (firstTableRow) {
                     (firstTableRow as HTMLElement).focus();
@@ -50,6 +124,7 @@ export function Search() {
         onCleanup(() => {
             el.removeEventListener("keydown", onTabOrEnter);
             window.removeEventListener("keydown", onControlF);
+            clearInsightPreview();
         });
     });
 

@@ -28,6 +28,8 @@ interface TrainingContextType {
     setPlayerRole: (role: Role) => void;
     pickPosition: () => 0 | TrainingPickPosition;
     setPickPosition: (position: 0 | TrainingPickPosition) => void;
+    trainingInsightIndex: () => number | undefined;
+    setTrainingInsightIndex: (index: number | undefined) => void;
     totalWins: () => number;
     totalLosses: () => number;
     roundsPlayed: () => number;
@@ -64,6 +66,9 @@ export function createTrainingContext() {
     const [resolvedRoundId, setResolvedRoundId] = createSignal<number>();
     const [trainingFeedbackPending, setTrainingFeedbackPending] =
         createSignal(false);
+    const [trainingInsightIndex, setTrainingInsightIndex] = createSignal<
+        number | undefined
+    >(undefined);
     const [pickedChampionKey, setPickedChampionKey] = createSignal<string>();
     const [pickedChampionRank, setPickedChampionRank] = createSignal<number>();
     const [trainingResultToastId, setTrainingResultToastId] =
@@ -118,7 +123,7 @@ export function createTrainingContext() {
     function getEffectivePickPosition(): TrainingPickPosition {
         const configured = pickPosition();
         if (configured !== 0) return configured;
-        return (Math.floor(Math.random() * 5) + 1) as TrainingPickPosition;
+        return (Math.floor(Math.random() * 4) + 2) as TrainingPickPosition;
     }
 
     function prepareNextRound() {
@@ -176,6 +181,7 @@ export function createTrainingContext() {
 
             setResolvedRoundId(undefined);
             setTrainingFeedbackPending(false);
+            setTrainingInsightIndex(undefined);
             setPickedChampionKey(undefined);
             setPickedChampionRank(undefined);
             setCurrentRound(nextRound);
@@ -211,9 +217,11 @@ export function createTrainingContext() {
         }
 
         setIsTrainingMode(false);
+        resetAll();
         setCurrentRound(undefined);
         setResolvedRoundId(undefined);
         setTrainingFeedbackPending(false);
+        setTrainingInsightIndex(undefined);
         setPickedChampionKey(undefined);
         setPickedChampionRank(undefined);
     }
@@ -295,6 +303,8 @@ export function createTrainingContext() {
         setPlayerRole,
         pickPosition,
         setPickPosition,
+        trainingInsightIndex,
+        setTrainingInsightIndex,
         totalWins,
         totalLosses,
         roundsPlayed,

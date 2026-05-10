@@ -11,6 +11,7 @@ const LOLALYTICS_ROLES = [
     "support",
 ] as const;
 const COACHLESS_ROLES = ["top", "jungle", "mid", "adc", "support"] as const;
+const LOLTHEORY_ROLES = ["top", "jungle", "middle", "bottom", "support"] as const;
 
 export const linkByStatsSite = (
     statsSite: StatsSite,
@@ -29,6 +30,8 @@ export const linkByStatsSite = (
             return `https://op.gg/champions/${champion}/${OP_GG_ROLES[role]}/build`;
         case "coachless":
             return `https://coachless.gg/builds/${champion}?role=${COACHLESS_ROLES[role]}`;
+        case "loltheory":
+            return `https://loltheory.gg/lol/champion/${champion}/build-runes/${LOLTHEORY_ROLES[role]}`;
     }
 };
 
@@ -42,5 +45,7 @@ export const displayNameByStatsSite = (statsSite: StatsSite) => {
             return "OP.GG";
         case "coachless":
             return "Coachless";
+        case "loltheory":
+            return "LoLTheory";
     }
 };

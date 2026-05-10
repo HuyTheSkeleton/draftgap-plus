@@ -45,6 +45,8 @@ export default function DraftTable() {
         playerRole,
         trainingSuggestions,
         trainingFeedbackPending,
+        trainingInsightIndex,
+        setTrainingInsightIndex,
         pickedChampionKey,
     } = useTraining();
     
@@ -152,7 +154,6 @@ export default function DraftTable() {
         }
 
         if (isTrainingMode() && !trainingFeedbackPending()) {
-            // Hide the answer key before the user commits a pick.
             filtered = [...filtered].sort((a, b) =>
                 dataset()!.championData[a.championKey].name.localeCompare(
                     dataset()!.championData[b.championKey].name
@@ -600,6 +601,16 @@ export default function DraftTable() {
                         classes.push("bg-emerald-900/30 ring-2 ring-emerald-400/70");
                     }
 
+                    if (
+                        isTrainingMode() &&
+                        trainingFeedbackPending() &&
+                        trainingInsightIndex() === r.index
+                    ) {
+                        classes.push(
+                            "bg-sky-900/30 ring-2 ring-sky-400/80 ring-inset"
+                        );
+                    }
+
                     return classes.join(" ");
                 }}
                 rowRef={(r, el) => {
@@ -818,6 +829,29 @@ export default function DraftTable() {
                         return { content };
                         }) || { content: null };
                     });
+                    if (!(el as any)._trainingHoverAttached) {
+                        (el as any)._trainingHoverAttached = true;
+                        const onMouseEnter = () => {
+                            if (isTrainingMode() && trainingFeedbackPending()) {
+                                setTrainingInsightIndex(r.index);
+                            }
+                        };
+
+                        const onMouseLeave = (ev: MouseEvent) => {
+                            try {
+                                const related = ev.relatedTarget as Node | null;
+                                const tableEl = el.closest && (el.closest('#draft-table') as HTMLElement | null);
+                                if (!tableEl || !related || !tableEl.contains(related)) {
+                                    setTrainingInsightIndex(undefined);
+                                }
+                            } catch {
+                                setTrainingInsightIndex(undefined);
+                            }
+                        };
+
+                        el.addEventListener('mouseenter', onMouseEnter);
+                        el.addEventListener('mouseleave', onMouseLeave);
+                    }
                 }}
                 id="draft-table"
             />

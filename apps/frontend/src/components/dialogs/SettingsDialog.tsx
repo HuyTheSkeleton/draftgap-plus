@@ -82,6 +82,10 @@ export default function SettingsDialog() {
             value: "coachless",
             label: "coachless",
         },
+        {
+            value: "loltheory",
+            label: "loltheory",
+        },
     ] as const;
 
     const roleOptions: ButtonGroupOption<Role>[] = [0, 1, 2, 3, 4].map(

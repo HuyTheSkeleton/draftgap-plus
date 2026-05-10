@@ -39,6 +39,12 @@ The Analysis tab provides quick, aggregated context about each champion in the l
 * **General power level:** a simple strong/weak rating derived from overall winrates.
 * **Who counters who:** if the champion is statistically weak or strong against your current picks.
 
+### 5. Draft Training Mode
+DraftGap+ now includes a focused training loop for practicing draft decisions directly inside the app. Build a realistic draft state, review ranked recommendations.
+
+* **Set up the scenario:** choose your lane and pick order, then start a training round from Settings.
+* **Stay keyboard-only:** search a champion, press `Enter` to continue the round, and use `Tab` to move through ranked insight rows.
+
 ## 🛡️ Core Features (Inherited from DraftGap)
 
 DraftGap+ keeps all the excellent features that make the original tool great:
@@ -56,6 +62,13 @@ DraftGap+ keeps all the excellent features that make the original tool great:
 4.  Open the app and start your League of Legends client.
 
 ## 📜 Changelog
+* **v4.2.0** – 2026-05-10
+  - fixed account switching so the app refreshes the current summoner when the League client changes accounts, preventing self-hover from being treated as an external hover
+  - improved random training pick order by excluding pick 1 from random mode
+  - added a keyboard-first training loop: `Enter` continues the round from search, `Tab` cycles ranked insight rows, and the active insight stays visible
+  - fixed no focus effect on hover in post-training mode
+  - stopping training now clears both ally and opponent teams so returning to normal draft mode starts on a clean board
+
 * **v4.1.1** – 2026-04-19
   - training feedback now pauses on the picked champion, shows ranked best options after the pick, keeps the feedback toast visible until the next round
 
@@ -76,14 +89,6 @@ DraftGap+ keeps all the excellent features that make the original tool great:
 * **v3.1.0** – 2026-03-25
   - fixed sorting logic in hover insights to correctly prioritize and display the top 3 hardest counters
   - resolved an issue where the weakest synergies and counters were showing the least impactful negative matchups instead of the most severe ones
-
-* **v3.0.4** – 2026‑03‑10  
-  - repushed fix for insights-on-hover after regression  
-  - added hover‑insights tooltip  
-  - analysis tab now shows popularity/power counters  
-
-* **v3.0.3** – 2026‑03‑10  
-  - fixed bug in hover‑insights calculation  
 
 ---
 

@@ -25,7 +25,7 @@ const DEFAULT_CONFIG: DraftGapConfig = {
     language: "en_US",
 
     // MISC
-    defaultStatsSite: "coachless",
+    defaultStatsSite: "loltheory",
     enableBetaFeatures: false,
 
     // LOL CLIENT

@@ -311,11 +311,18 @@ export const createLolClientContext = () => {
 
         const update = async () => {
             try {
-                if (!hasCurrentSummoner()) {
+                {
                     const summoner = await getCurrentSummoner();
                     if (summoner) {
-                        setCurrentSummoner(summoner);
-                        setHasCurrentSummoner(true);
+                        const needsUpdate =
+                            !hasCurrentSummoner() ||
+                            summoner.summonerId !== currentSummoner.summonerId;
+                        if (needsUpdate) {
+                            setCurrentSummoner(summoner);
+                            setHasCurrentSummoner(true);
+                        }
+                    } else if (hasCurrentSummoner()) {
+                        setHasCurrentSummoner(false);
                     }
                 }
 

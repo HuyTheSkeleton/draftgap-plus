@@ -24,6 +24,7 @@ import { ViewTabs } from "./components/common/ViewTabs";
 import { BuildsView } from "./components/views/builds/BuildsView";
 import { useDraftView } from "./contexts/DraftViewContext";
 import { useUser } from "./contexts/UserContext";
+import { Team } from "@draftgap/core/src/models/Team";
 import { useDataset } from "./contexts/DatasetContext";
 import { LoadingIcon } from "./components/icons/LoadingIcon";
 import { DialogTrigger, Dialog } from "./components/common/Dialog";
@@ -117,8 +118,8 @@ const App: Component = () => {
                                 championKey={analysisPick()!.championKey}
                                 team={analysisPick()!.team}
                                 openChampionDraftAnalysisModal={(
-                                    team,
-                                    championKey
+                                    team: Team,
+                                    championKey: string
                                 ) => setAnalysisPick({ team, championKey })}
                             />
                         </Dialog>
@@ -248,7 +249,7 @@ const App: Component = () => {
             </Dialog>
             <header class="bg-primary px-1 py-0 border-b-2 border-neutral-700 flex justify-between">
                 <h1 class="text-4xl sm:text-5xl mr-2 ml-1 mt-1 mb-[0.4rem] font-semibold tracking-wide">
-                    DRAFTGAP+ <span class="text-lg text-neutral-500 font-normal">v4.2.0</span>
+                    DRAFTGAP+ <span class="text-lg text-neutral-500 font-normal">v4.3.0</span>
                 </h1>
                 <div class="flex items-center gap-4">
                     <div class="text-xs text-neutral-400 hidden md:flex flex-col text-right uppercase">

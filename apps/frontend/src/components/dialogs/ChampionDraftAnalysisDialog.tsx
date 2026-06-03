@@ -13,6 +13,8 @@ import { cn } from "../../utils/style";
 import { displayNameByStatsSite, linkByStatsSite } from "../../utils/sites";
 import { useUser } from "../../contexts/UserContext";
 import { championName } from "../../utils/i18n";
+import { ChampionInsightSection } from "../views/analysis/ChampionInsightSection";
+
 tooltip;
 
 type Props = {
@@ -32,7 +34,7 @@ export function ChampionDraftAnalysisDialog(props: Props) {
     } = useDraftAnalysis();
     const { config } = useUser();
 
-    const draftResult = () =>
+    const analysisResult = () =>
         props.team === "ally" ? allyDraftResult() : opponentDraftResult();
     const teamComp = () =>
         props.team === "ally" ? allyTeamComp() : opponentTeamComp();
@@ -81,6 +83,12 @@ export function ChampionDraftAnalysisDialog(props: Props) {
                 championKey={props.championKey}
             />
 
+            <ChampionInsightSection
+                team={props.team}
+                championKey={props.championKey}
+                role={role()}
+            />
+
             <div
                 id="matchup-champion-result"
                 class="overflow-x-hidden -m-1 p-1"
@@ -116,7 +124,7 @@ export function ChampionDraftAnalysisDialog(props: Props) {
                     class="ring-1 ring-white ring-opacity-10"
                     data={() => {
                         const data =
-                            draftResult()
+                            analysisResult()
                                 ?.matchupRating.matchupResults.filter(
                                     (result) =>
                                         result.championKeyA ===
@@ -158,26 +166,27 @@ export function ChampionDraftAnalysisDialog(props: Props) {
                     class="ring-1 ring-white ring-opacity-10"
                     halfDuoRating
                     data={() => {
-                        const data = draftResult()!
-                            .allyDuoRating.duoResults.filter(
-                                (result) =>
-                                    result.championKeyA === props.championKey ||
-                                    result.championKeyB === props.championKey
-                            )
-                            .map((r) => {
-                                if (r.championKeyA === props.championKey) {
-                                    return r;
-                                }
+                        const data =
+                            analysisResult()!
+                                .allyDuoRating.duoResults.filter(
+                                    (result) =>
+                                        result.championKeyA === props.championKey ||
+                                        result.championKeyB === props.championKey
+                                )
+                                .map((result) => {
+                                    if (result.championKeyA === props.championKey) {
+                                        return result;
+                                    }
 
-                                return {
-                                    ...r,
-                                    championKeyA: r.championKeyB,
-                                    roleA: r.roleB,
-                                    championKeyB: r.championKeyA,
-                                    roleB: r.roleA,
-                                };
-                            })
-                            .sort((a, b) => a.roleB - b.roleB);
+                                    return {
+                                        ...result,
+                                        championKeyA: result.championKeyB,
+                                        roleA: result.roleB,
+                                        championKeyB: result.championKeyA,
+                                        roleB: result.roleA,
+                                    };
+                                })
+                                .sort((a, b) => a.roleB - b.roleB);
 
                         return data;
                     }}

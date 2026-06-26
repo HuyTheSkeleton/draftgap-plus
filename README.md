@@ -62,6 +62,9 @@ DraftGap+ keeps all the excellent features that make the original tool great:
 4.  Open the app and start your League of Legends client.
 
 ## 📜 Changelog
+* **v4.3.0** – 2026-06-26
+  - fixed minor bugs
+  - updated stat site opening behavior to reuse the current tab instead of opening a new one
 * **v4.2.0** – 2026-05-10
   - fixed account switching so the app refreshes the current summoner when the League client changes accounts, preventing self-hover from being treated as an external hover
   - improved random training pick order by excluding pick 1 from random mode
@@ -86,9 +89,6 @@ DraftGap+ keeps all the excellent features that make the original tool great:
 * **v3.1.1** – 2026-03-25
   - fixed a text rendering bug in hover insights where strong champion counters were incorrectly labeled as "Weak against"
   
-* **v3.1.0** – 2026-03-25
-  - fixed sorting logic in hover insights to correctly prioritize and display the top 3 hardest counters
-  - resolved an issue where the weakest synergies and counters were showing the least impactful negative matchups instead of the most severe ones
 
 ---
 

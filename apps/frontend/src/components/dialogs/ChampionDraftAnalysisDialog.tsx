@@ -10,7 +10,11 @@ import { useDraftAnalysis } from "../../contexts/DraftAnalysisContext";
 import { useDataset } from "../../contexts/DatasetContext";
 import { DialogContent, DialogTitle } from "../common/Dialog";
 import { cn } from "../../utils/style";
-import { displayNameByStatsSite, linkByStatsSite } from "../../utils/sites";
+import {
+    STATS_SITE_WINDOW_NAME,
+    displayNameByStatsSite,
+    linkByStatsSite,
+} from "../../utils/sites";
 import { useUser } from "../../contexts/UserContext";
 import { championName } from "../../utils/i18n";
 tooltip;
@@ -71,7 +75,7 @@ export function ChampionDraftAnalysisDialog(props: Props) {
                         champion().id,
                         role()!
                     )}
-                    target="_blank"
+                    target={STATS_SITE_WINDOW_NAME}
                 >
                     {displayNameByStatsSite(config.defaultStatsSite)}
                 </a>

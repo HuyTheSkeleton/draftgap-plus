@@ -56,7 +56,7 @@ export function TooltipProvider(props: { children: JSX.Element }) {
     return (
         <TooltipContext.Provider value={ctx}>
             {props.children}
-            <div class="absolute z-[1000] top-0 left-0">
+            <div class="absolute z-[1000] top-0 left-0 pointer-events-none">
                 <Transition
                     enterActiveClass="transition-opacity duration-100 ease-out"
                     enterClass="opacity-0"
@@ -69,9 +69,9 @@ export function TooltipProvider(props: { children: JSX.Element }) {
                         <div
                             ref={setPopper}
                             id="tooltip"
-                            class="max-w-xs w-max"
+                            class="max-w-xs w-max pointer-events-none"
                         >
-                            <div class="rounded-md bg-neutral-800 shadow-lg px-4 py-2 font-body text-sm ring-1 ring-white ring-opacity-20">
+                            <div class="rounded-md bg-neutral-800 shadow-lg px-4 py-2 font-body text-sm ring-1 ring-white ring-opacity-20 pointer-events-none">
                                 {ctx.popoverContent()}
                             </div>
                             <div data-popper-arrow id="arrow" />

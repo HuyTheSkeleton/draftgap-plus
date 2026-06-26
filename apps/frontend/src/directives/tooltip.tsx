@@ -45,6 +45,7 @@ export function tooltip(
     });
 
     onCleanup(() => {
+        setPopoverVisible(false);
         el.removeEventListener("mouseleave", onHoverLeave);
         el.removeEventListener("mouseenter", onHover);
         clearTimeout(timeout);

@@ -19,9 +19,27 @@ import { DatasetProvider } from "./contexts/DatasetContext";
 import { DraftFiltersProvider } from "./contexts/DraftFiltersContext";
 import { ExtraDraftAnalysisProvider } from "./contexts/ExtraDraftAnalysisContext";
 import { TrainingProvider } from "./contexts/TrainingContext";
+import {
+    STATS_SITE_WINDOW_NAME,
+    isStatsSiteUrl,
+} from "./utils/sites";
 
 setupMobileVH();
 setupAnalytics();
+
+const nativeWindowOpen = window.open.bind(window);
+
+window.open = ((
+    url?: string | URL,
+    target?: string,
+    features?: string
+) => {
+    if (typeof url === "string" && isStatsSiteUrl(url)) {
+        return nativeWindowOpen(url, STATS_SITE_WINDOW_NAME, features);
+    }
+
+    return nativeWindowOpen(url, target, features);
+}) as typeof window.open;
 
 const queryClient = new QueryClient();
 

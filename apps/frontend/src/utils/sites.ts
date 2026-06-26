@@ -1,6 +1,27 @@
 import { Role } from "@draftgap/core/src/models/Role";
 import { StatsSite } from "@draftgap/core/src/models/user/Config";
 
+export const STATS_SITE_WINDOW_NAME = "draftgap-stats-site";
+
+const STATS_SITE_HOSTS = [
+    "lolalytics.com",
+    "u.gg",
+    "op.gg",
+    "coachless.gg",
+    "loltheory.gg",
+] as const;
+
+export const isStatsSiteUrl = (url: string) => {
+    try {
+        const hostname = new URL(url).hostname.toLowerCase();
+        return STATS_SITE_HOSTS.some(
+            (host) => hostname === host || hostname.endsWith(`.${host}`)
+        );
+    } catch {
+        return false;
+    }
+};
+
 const UGG_ROLES = ["top", "jungle", "mid", "adc", "support"] as const;
 const OP_GG_ROLES = ["top", "jungle", "mid", "adc", "support"] as const;
 const LOLALYTICS_ROLES = [
